@@ -18,7 +18,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--pred", "-p", type=Path, required=True, help="Path to file with layout predictions")
     parser.add_argument("--dataset", "-d", required=True, choices=("scannetpp", "2d3ds"), help="Dataset")
-    parser.add_argument("--split", "-s", required=True, choices=("train", "val", "test", "all"), help="Data split")
+    parser.add_argument("--split", "-s", required=True, choices=("train", "val", "test"), help="Data split")
     parser.add_argument("--num_images", "-ni", type=int, help="Number of images per tuple (ScanNet++)")
     parser.add_argument(
         "--normal_angle_threshold", "-nat", type=float, default=10.0, help="Normal angle error threshold"
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     with open(dataset_dir() / args.dataset / f"images_{args.split}.json") as f:
         image_tuples = json.load(f)
 
-    with open(dataset_dir() / args.dataset / f"cuboids_{args.split}.json") as f:
+    with open(dataset_dir() / args.dataset / f"layouts_{args.split}.json") as f:
         cuboid_params_gt = json.load(f)
 
     with open(args.pred) as f:

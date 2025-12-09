@@ -14,14 +14,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate predicted layouts")
     parser.add_argument("--pred", "-p", type=Path, required=True, help="Path to file with layout predictions")
     parser.add_argument("--dataset", "-d", required=True, choices=("scannetpp", "2d3ds"), help="Dataset")
-    parser.add_argument("--split", "-s", required=True, choices=("train", "val", "test", "all"), help="Data split")
+    parser.add_argument("--split", "-s", required=True, choices=("train", "val", "test"), help="Data split")
     parser.add_argument("--use_best", "-ub", action="store_true", help="Use prediction with highest IoU for each scene")
     args = parser.parse_args()
 
     with open(dataset_dir() / args.dataset / f"images_{args.split}.json") as f:
         image_tuples = json.load(f)
 
-    with open(dataset_dir() / args.dataset / f"cuboids_{args.split}.json") as f:
+    with open(dataset_dir() / args.dataset / f"layouts_{args.split}.json") as f:
         cuboid_params_gt = json.load(f)
 
     with open(args.pred) as f:

@@ -3,7 +3,7 @@
 This repository contains two datasets, based on [ScanNet++](https://kaldir.vc.in.tum.de/scannetpp/) and [2D-3D-Semantics](https://github.com/alexsax/2D-3D-Semantics), for benchmarking *multi-view cuboid room layout estimation*.
 
 Each dataset consists of a set of *image tuples* and corresponding *ground truth cuboids*. We supply scripts to evaluate predicted room layouts against the ground truth.
-  
+
 ![Multi-view cuboid room layout estimation](assets/teaser.jpg)
 *Given images with known camera poses captured inside a cuboid-shaped room the goal is to estimate the room layout.*
 
@@ -44,7 +44,7 @@ The subset of cuboid-shaped scenes in ScanNet++ v2 have been split into training
 
 #### 2D-3D-Semantics
 
-No data split has been performed for the cuboid-shaped scenes (also called "spaces") of 2D-3D-Semantics. The 160 scenes are listed in [scenes_all.txt](dataset/2d3ds/scenes_all.txt).
+No data split has been performed for the cuboid-shaped scenes (also called "spaces") of 2D-3D-Semantics. The 160 scenes are listed in [scenes_test.txt](dataset/2d3ds/scenes_test.txt).
 
 ### Image tuples
 
@@ -54,13 +54,13 @@ Each tuple consists of 10 randomly sampled DSLR images. For the training scenes 
 
 #### 2D-3D-Semantics
 
-For each space there is one tuple with 2 panoramic and 8 corresponding perspective images, see [images_all.json](dataset/2d3ds/images_all.json).
+For each space there is one tuple with 2 panoramic and 8 corresponding perspective images, see [images_test.json](dataset/2d3ds/images_test.json).
 
 ### Ground truth cuboids
 
-Ground truth cuboids for all scenes are available in [cuboids_train.json](dataset/scannetpp/cuboids_train.json), [cuboids_val.json](dataset/scannetpp/cuboids_val.json), [cuboids_test.json](dataset/scannetpp/cuboids_test.json) (ScanNet++) and [cuboids_all.json](dataset/2d3ds/cuboids_all.json) (2D-3D-Semantics).
+Ground truth cuboids for all scenes are available in [layouts_train.json](dataset/scannetpp/layouts_train.json), [layouts_val.json](dataset/scannetpp/layouts_val.json), [layouts_test.json](dataset/scannetpp/layouts_test.json) (ScanNet++) and [layouts_test.json](dataset/2d3ds/layouts_test.json) (2D-3D-Semantics).
 
-The cuboids are parameterized by a rotation matrix $R$ and translation vector $t$ such that a point $x$ in scene coordinates is transformed to the cuboid's local frame via $Rx + t$. The size of the cuboid in the local frame is given by the size vector $s$.
+The cuboids are parameterized by a rotation matrix $R$ and translation vector $t$ such that a point $x$ in scene coordinates is transformed to the cuboid's local frame via $Rx + t$. The size of the cuboid in the local frame is given by the size vector $s = [s_x ~ s_y ~ s_z]$.
 
 ## Evaluation
 
@@ -70,7 +70,7 @@ A layout prediction can be either:
 - A cuboid, using the same format as in the ground truth cuboid files (keys: "R", "t", "s").
 - A triangle mesh (keys: "faces", "verts").
 - The path to a triangle mesh file that can be read with [MeshLib](https://meshlib.io).
-  
+
 If your method generates predictions using some other representation, for example a floor-level polygon with height, we suggest that you convert it into a mesh.
 
 *Tip*: The script `generate_predictions.py` can be used to generate example room layout predictions for both ScanNet++ and 2D-3D-Semantics.
@@ -111,7 +111,7 @@ pip install -r requirements_extra.txt
 
 <details>
 <summary>Details</summary>
-  
+
 ### Define paths
 
 ```bash
@@ -165,7 +165,7 @@ Ground truth cuboid files for the training, validation and test splits were gene
 ```bash
 for split in train val test
 do
-  python -m mvrl.compile_gt_cuboids --cuboid_dir $SCANNETPP_CUBOID_DIR --split_path $SCANNETPP_DATASET_DIR/scenes_$split.txt --output_path $SCANNETPP_DATASET_DIR/cuboids_$split.json
+  python -m mvrl.compile_gt_cuboids --cuboid_dir $SCANNETPP_CUBOID_DIR --split_path $SCANNETPP_DATASET_DIR/scenes_$split.txt --output_path $SCANNETPP_DATASET_DIR/layouts_$split.json
 done
 ```
 
@@ -220,14 +220,14 @@ The GIF animations of all scenes in the preliminary lists were inspected manuall
 
 *❌ A scene that is not cuboid-shaped.*
 
-This process resulted in a total of 160 scenes for all areas combined, added to the file scenes_all.txt.
+This process resulted in a total of 160 scenes for all areas combined, added to the file scenes_test.txt.
 
 ### Ground truth cuboids
 
 A ground truth cuboid file was generated as follows:
 
 ```bash
-python -m mvrl.compile_gt_cuboids --cuboid_dir $_2D3DS_CUBOID_DIR --split_path $_2D3DS_DATASET_DIR/scenes_all.txt --output_path $_2D3DS_DATASET_DIR/cuboids_all.json
+python -m mvrl.compile_gt_cuboids --cuboid_dir $_2D3DS_CUBOID_DIR --split_path $_2D3DS_DATASET_DIR/scenes_test.txt --output_path $_2D3DS_DATASET_DIR/layouts_test.json
 ```
 
 ### Image sampling
@@ -235,12 +235,12 @@ python -m mvrl.compile_gt_cuboids --cuboid_dir $_2D3DS_CUBOID_DIR --split_path $
 Pairs of panorama images were sampled randomly for each scene:
 
 ```bash
-python -m mvrl.sample_images_2d3ds --root_dir $_2D3DS_ROOT_DIR --split_path $_2D3DS_DATASET_DIR/scenes_all.txt --cuboid_path $_2D3DS_DATASET_DIR/cuboids_all.json --num_panos 2 --output_path $_2D3DS_DATASET_DIR/images_all.json
+python -m mvrl.sample_images_2d3ds --root_dir $_2D3DS_ROOT_DIR --split_path $_2D3DS_DATASET_DIR/scenes_test.txt --cuboid_path $_2D3DS_DATASET_DIR/layouts_test.json --num_panos 2 --output_path $_2D3DS_DATASET_DIR/images_test.json
 ```
 
 </details>
 
-## BibTex citation
+## BibTeX citation
 
 If you use these datasets consider citing our work:
 
