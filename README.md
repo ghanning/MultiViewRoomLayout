@@ -32,7 +32,7 @@ To be able to compare panorama and perspective based methods we supply a script 
 ```bash
 for area in area_1 area_2 area_3 area_4 area_5a area_5b area_6
 do
-  python -m mvc.pano_to_persp_2d3ds --root_dir ROOT_DIR --area $area
+  python -m mvrl.pano_to_persp_2d3ds --root_dir ROOT_DIR --area $area
 done
 ```
 
@@ -82,7 +82,7 @@ We offer two different scripts to run the evaluation, with different metrics as 
 To compute the 3D Intersection-over-Union (IoU) and Chamfer distance between the predictions and the ground truth cuboids run
 
 ```bash
-python -m mvc.evaluate --pred PRED --dataset {scannetpp,2d3ds} --split {train,val,test,all}
+python -m mvrl.evaluate --pred PRED --dataset {scannetpp,2d3ds} --split {train,val,test,all}
 ```
 
 If the predictions are cuboids the script will also calculate the rotation error.
@@ -92,7 +92,7 @@ If the predictions are cuboids the script will also calculate the rotation error
 To render the predicted and ground truth room layouts in each view and compute per-pixel depth and normal angle errors use
 
 ```bash
-python -m mvc.evaluate_pixel --root_dir ROOT_DIR --pred PRED --dataset {scannetpp,2d3ds} --split {train,val,test,all} [--num_images NUM_IMAGES]
+python -m mvrl.evaluate_pixel --root_dir ROOT_DIR --pred PRED --dataset {scannetpp,2d3ds} --split {train,val,test,all} [--num_images NUM_IMAGES]
 ```
 
 If your predictions are based only on a subset of the images in each tuple (e.g. you used the first 5 images out of the 10 for ScanNet++) specify this with the `--num_images` argument.
@@ -128,7 +128,7 @@ For each scene a cuboid was fitted to the vertices of the semantic mesh classifi
 
 for split in train val
 do
-  python -m mvc.fit_cuboids_scannetpp --root_dir $SCANNETPP_ROOT_DIR --split_path $SCANNETPP_ROOT_DIR/splits/nvs_sem_$split.txt --output_dir $SCANNETPP_CUBOID_DIR --output_split_path $SCANNETPP_DATASET_DIR/scenes_$split.txt
+  python -m mvrl.fit_cuboids_scannetpp --root_dir $SCANNETPP_ROOT_DIR --split_path $SCANNETPP_ROOT_DIR/splits/nvs_sem_$split.txt --output_dir $SCANNETPP_CUBOID_DIR --output_split_path $SCANNETPP_DATASET_DIR/scenes_$split.txt
 done
 ```
 
@@ -165,7 +165,7 @@ Ground truth cuboid files for the training, validation and test splits were gene
 ```bash
 for split in train val test
 do
-  python -m mvc.compile_gt_cuboids --cuboid_dir $SCANNETPP_CUBOID_DIR --split_path $SCANNETPP_DATASET_DIR/scenes_$split.txt --output_path $SCANNETPP_DATASET_DIR/cuboids_$split.json
+  python -m mvrl.compile_gt_cuboids --cuboid_dir $SCANNETPP_CUBOID_DIR --split_path $SCANNETPP_DATASET_DIR/scenes_$split.txt --output_path $SCANNETPP_DATASET_DIR/cuboids_$split.json
 done
 ```
 
@@ -175,9 +175,9 @@ Tuples of 10 DSLR images were sampled randomly for each scene:
 
 ```bash
 NUM_IMAGES=10
-python -m mvc.sample_images_scannetpp --root_dir $SCANNETPP_ROOT_DIR --split_path $SCANNETPP_DATASET_DIR/scenes_train.txt --num_images $NUM_IMAGES --num_tuples 250 --output_path $SCANNETPP_DATASET_DIR/images_train.json
-python -m mvc.sample_images_scannetpp --root_dir $SCANNETPP_ROOT_DIR --split_path $SCANNETPP_DATASET_DIR/scenes_val.txt --num_images $NUM_IMAGES --num_tuples 20 --output_path $SCANNETPP_DATASET_DIR/images_val.json
-python -m mvc.sample_images_scannetpp --root_dir $SCANNETPP_ROOT_DIR --split_path $SCANNETPP_DATASET_DIR/scenes_test.txt --num_images $NUM_IMAGES --num_tuples 20 --output_path $SCANNETPP_DATASET_DIR/images_test.json
+python -m mvrl.sample_images_scannetpp --root_dir $SCANNETPP_ROOT_DIR --split_path $SCANNETPP_DATASET_DIR/scenes_train.txt --num_images $NUM_IMAGES --num_tuples 250 --output_path $SCANNETPP_DATASET_DIR/images_train.json
+python -m mvrl.sample_images_scannetpp --root_dir $SCANNETPP_ROOT_DIR --split_path $SCANNETPP_DATASET_DIR/scenes_val.txt --num_images $NUM_IMAGES --num_tuples 20 --output_path $SCANNETPP_DATASET_DIR/images_val.json
+python -m mvrl.sample_images_scannetpp --root_dir $SCANNETPP_ROOT_DIR --split_path $SCANNETPP_DATASET_DIR/scenes_test.txt --num_images $NUM_IMAGES --num_tuples 20 --output_path $SCANNETPP_DATASET_DIR/images_test.json
 ```
 
 </details>
@@ -202,7 +202,7 @@ For each scene a cuboid was fitted to the points in the point cloud classified a
 ```bash
 for area in area_1 area_2 area_3 area_4 area_5a area_5b area_6
 do
-  python -m mvc.fit_cuboids_2d3ds --root_dir $_2D3DS_ROOT_DIR --area $area --output_dir $_2D3DS_CUBOID_DIR --output_split_path $_2D3DS_DATASET_DIR/scenes_$area.txt
+  python -m mvrl.fit_cuboids_2d3ds --root_dir $_2D3DS_ROOT_DIR --area $area --output_dir $_2D3DS_CUBOID_DIR --output_split_path $_2D3DS_DATASET_DIR/scenes_$area.txt
 done
 ```
 
@@ -227,7 +227,7 @@ This process resulted in a total of 160 scenes for all areas combined, added to 
 A ground truth cuboid file was generated as follows:
 
 ```bash
-python -m mvc.compile_gt_cuboids --cuboid_dir $_2D3DS_CUBOID_DIR --split_path $_2D3DS_DATASET_DIR/scenes_all.txt --output_path $_2D3DS_DATASET_DIR/cuboids_all.json
+python -m mvrl.compile_gt_cuboids --cuboid_dir $_2D3DS_CUBOID_DIR --split_path $_2D3DS_DATASET_DIR/scenes_all.txt --output_path $_2D3DS_DATASET_DIR/cuboids_all.json
 ```
 
 ### Image sampling
@@ -235,7 +235,7 @@ python -m mvc.compile_gt_cuboids --cuboid_dir $_2D3DS_CUBOID_DIR --split_path $_
 Pairs of panorama images were sampled randomly for each scene:
 
 ```bash
-python -m mvc.sample_images_2d3ds --root_dir $_2D3DS_ROOT_DIR --split_path $_2D3DS_DATASET_DIR/scenes_all.txt --cuboid_path $_2D3DS_DATASET_DIR/cuboids_all.json --num_panos 2 --output_path $_2D3DS_DATASET_DIR/images_all.json
+python -m mvrl.sample_images_2d3ds --root_dir $_2D3DS_ROOT_DIR --split_path $_2D3DS_DATASET_DIR/scenes_all.txt --cuboid_path $_2D3DS_DATASET_DIR/cuboids_all.json --num_panos 2 --output_path $_2D3DS_DATASET_DIR/images_all.json
 ```
 
 </details>
