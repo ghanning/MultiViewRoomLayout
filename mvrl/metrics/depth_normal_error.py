@@ -10,21 +10,23 @@ from ..renderer import Renderer
 
 
 def perspective_projection(
-    fx: float, fy: float, cx: float, cy: float, znear: float = 0.01, zfar: float = 1000.0
+    fx: float, fy: float, cx: float, cy: float, width: int, height: int, znear: float = 0.01, zfar: float = 1000.0
 ) -> np.ndarray:
-    """! Calculate OpenGL perspective matrix from camera intrinsics.
+    """! Calculate OpenGL perspective matrix from OpenCV/COLMAP camera intrinsics.
 
     @see http://kgeorge.github.io/2014/03/08/calculating-opengl-perspective-matrix-from-opencv-intrinsic-matrix
 
     @param fx, fy Focal lengths.
     @param cx, cy Principal point.
+    @param width, height Image dimensions.
     @param znear, zfar Position of the near and far planes.
     @return The projection matrix (4, 4).
     """
+    cy = height - cy  # Flip y-axis
     return np.array(
         [
-            [fx / cx, 0, 0, 0],
-            [0, fy / cy, 0, 0],
+            [2 * fx / width, 0, 1 - 2 * cx / width, 0],
+            [0, 2 * fy / height, 1 - 2 * cy / height, 0],
             [0, 0, -(zfar + znear) / (zfar - znear), -2 * zfar * znear / (zfar - znear)],
             [0, 0, -1, 0],
         ]
@@ -92,8 +94,10 @@ def depth_normal_error(
     opencv_to_opengl[1, 1] = opencv_to_opengl[2, 2] = -1
     world_to_view = opencv_to_opengl @ world_to_camera
 
+    fx, fy, cx, cy = K[0, 0], K[1, 1], K[0, 2], K[1, 2]
+    width, height = renderer.fbo.size
     znear, zfar = 0.01, 1000.0
-    view_to_clip = perspective_projection(K[0, 0], K[1, 1], K[0, 2], K[1, 2], znear=znear, zfar=zfar)
+    view_to_clip = perspective_projection(fx, fy, cx, cy, width, height, znear=znear, zfar=zfar)
 
     normals1, depth1 = render_layout(layout1, renderer, world_to_view, view_to_clip)
     normals2, depth2 = render_layout(layout2, renderer, world_to_view, view_to_clip)
