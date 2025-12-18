@@ -16,7 +16,7 @@ def dataset_dir() -> Path:
     return Path(__file__).parent.parent / "dataset"
 
 
-def get_layout(input: Union[Dict, str], base_dir: Path) -> Union[Cuboid, mrmeshpy.Mesh]:
+def get_layout(input: Union[Dict, str], base_dir: Optional[Path] = None) -> Union[Cuboid, mrmeshpy.Mesh]:
     """! Get room layout.
 
     @param input One of the following:
@@ -30,10 +30,9 @@ def get_layout(input: Union[Dict, str], base_dir: Path) -> Union[Cuboid, mrmeshp
         if "R" in input and "t" in input and "s" in input:
             layout = Cuboid.from_dict(input)
         elif "faces" in input and "verts" in input:
-            faces = np.array(input["faces"])
-            verts = np.array(input["verts"])
+            faces = np.array(input["faces"]).reshape(-1, 3)
+            verts = np.array(input["verts"]).reshape(-1, 3)
             layout = mrmeshnumpy.meshFromFacesVerts(faces, verts)
-            assert layout.volume() > 0.0, "Zero or negative volume"
         else:
             raise ValueError("Invalid dictionary format for layout")
     elif isinstance(input, str):
@@ -41,7 +40,6 @@ def get_layout(input: Union[Dict, str], base_dir: Path) -> Union[Cuboid, mrmeshp
         if not path.is_absolute():
             path = base_dir / path
         layout = mrmeshpy.loadMesh(path)
-        assert layout.volume() > 0.0, "Zero or negative volume"
     else:
         raise TypeError("Input must be a dictionary or a string path to a mesh file")
     return layout
@@ -158,3 +156,32 @@ def chunk(sequence: Iterable, size: int) -> Generator[Iterable, None, None]:
     @return The chunks.
     """
     return (sequence[idx : idx + size] for idx in range(0, len(sequence), size))
+
+
+def flatten_multi_room(image_tuples: List, layouts_gt: Dict, layouts_pred: List) -> Tuple[List, Dict, List]:
+    """! Flatten a multi-room dataset.
+
+    @param image_tuples The image tuples.
+    @param layouts_gt Ground truth layouts.
+    @param layouts_pred Predicted layouts.
+    @return The split dataset.
+    """
+    image_tuples_new, layouts_gt_new, layouts_pred_new = [], {}, []
+
+    for idx, image_tuple in enumerate(image_tuples):
+        scene = image_tuple["scene"]
+        for room, images in image_tuple["images"].items():
+            new_tuple = {
+                "scene": f"{scene}:{room}",
+                "images": images,
+            }
+            if "perspective_images" in image_tuple:  # 2d3ds
+                new_tuple["perspective_images"] = image_tuple["perspective_images"][room]
+            image_tuples_new.append(new_tuple)
+            layouts_pred_new.append(layouts_pred[idx][room])
+
+    for scene, layouts in layouts_gt.items():
+        for room, layout in layouts.items():
+            layouts_gt_new[f"{scene}:{room}"] = layout
+
+    return image_tuples_new, layouts_gt_new, layouts_pred_new

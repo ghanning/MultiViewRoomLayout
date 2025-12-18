@@ -1,11 +1,11 @@
-# Multi-view cuboid room layout estimation
+# Multi-view room layout estimation
 
-This repository contains two datasets, based on [ScanNet++](https://kaldir.vc.in.tum.de/scannetpp/) and [2D-3D-Semantics](https://github.com/alexsax/2D-3D-Semantics), for benchmarking *multi-view cuboid room layout estimation*.
+This repository contains two datasets, based on [ScanNet++](https://kaldir.vc.in.tum.de/scannetpp/) and [2D-3D-Semantics](https://github.com/alexsax/2D-3D-Semantics), for benchmarking *multi-view room layout estimation*.
 
-Each dataset consists of a set of *image tuples* and corresponding *ground truth cuboids*. We supply scripts to evaluate predicted room layouts against the ground truth.
+Each dataset consists of a set of *image tuples* and corresponding *ground truth room layouts*. We supply scripts to evaluate predicted layouts against the ground truth.
 
-![Multi-view cuboid room layout estimation](assets/teaser.jpg)
-*Given images with known camera poses captured inside a cuboid-shaped room the goal is to estimate the room layout.*
+![Multi-view room layout estimation](assets/teaser.jpg)
+*Given images with known camera poses captured inside a room the goal is to estimate the room layout.*
 
 The datasets were created during the course of our work on the room layout estimation method [PixCuboid](https://github.com/ghanning/PixCuboid).
 
@@ -42,6 +42,8 @@ done
 
 The subset of cuboid-shaped scenes in ScanNet++ v2 have been split into training (391 scenes), validation (10 scenes) and test (18 scenes) sets according to the files [scenes_train.txt](dataset/scannetpp/scenes_train.txt), [scenes_val.txt](dataset/scannetpp/scenes_val.txt) and [scenes_test.txt](dataset/scannetpp/scenes_test.txt).
 
+An additional set of 160 scenes including non-cuboid rooms and multi-room scenes are available in [scenes_multi_room.txt](dataset/scannetpp/scenes_multi_room.txt).
+
 #### 2D-3D-Semantics
 
 No data split has been performed for the cuboid-shaped scenes (also called "spaces") of 2D-3D-Semantics. The 160 scenes are listed in [scenes_test.txt](dataset/2d3ds/scenes_test.txt).
@@ -50,17 +52,23 @@ No data split has been performed for the cuboid-shaped scenes (also called "spac
 
 #### ScanNet++
 
-Each tuple consists of 10 randomly sampled DSLR images. For the training scenes 250 tuples were generated whereas the validation and test scenes each have 20 image tuples. The tuples can be found in the files [images_train.json](dataset/scannetpp/images_train.json), [images_val.json](dataset/scannetpp/images_val.json) and [images_test.json](dataset/scannetpp/images_test.json).
+Each tuple consists of randomly sampled DSLR images. For the training scenes 250 tuples were generated whereas the validation and test scenes each have 20 image tuples - all containing 10 images. The tuples can be found in the files [images_train.json](dataset/scannetpp/images_train.json), [images_val.json](dataset/scannetpp/images_val.json) and [images_test.json](dataset/scannetpp/images_test.json).
+
+For the "multi_room" split 3 image tuples, with 20 DSLR images per room, were generated for every scene. These are given in [images_multi_room.json](dataset/scannetpp/images_multi_room.json).
 
 #### 2D-3D-Semantics
 
 For each space there is one tuple with 2 panoramic and 8 corresponding perspective images, see [images_test.json](dataset/2d3ds/images_test.json).
 
-### Ground truth cuboids
+### Ground truth layouts
 
-Ground truth cuboids for all scenes are available in [layouts_train.json](dataset/scannetpp/layouts_train.json), [layouts_val.json](dataset/scannetpp/layouts_val.json), [layouts_test.json](dataset/scannetpp/layouts_test.json) (ScanNet++) and [layouts_test.json](dataset/2d3ds/layouts_test.json) (2D-3D-Semantics).
+Ground truth room layouts for all scenes are available in [layouts_train.json](dataset/scannetpp/layouts_train.json), [layouts_val.json](dataset/scannetpp/layouts_val.json), [layouts_test.json](dataset/scannetpp/layouts_test.json), [layouts_multi_room.json](dataset/scannetpp/layouts_multi_room.json) (ScanNet++) and [layouts_test.json](dataset/2d3ds/layouts_test.json) (2D-3D-Semantics).
 
-The cuboids are parameterized by a rotation matrix $R$ and translation vector $t$ such that a point $x$ in scene coordinates is transformed to the cuboid's local frame via $Rx + t$. The size of the cuboid in the local frame is given by the size vector $s = [s_x ~ s_y ~ s_z]$.
+Layouts are represented as cuboids, except for rooms that are not cuboid-shaped in the "multi_room" split of ScanNet++.
+
+Cuboids are parameterized by a rotation matrix $R$ and translation vector $t$ such that a point $x$ in scene coordinates is transformed to the cuboid's local frame via $Rx + t$. The size of the cuboid in the local frame is given by the size vector $s = [s_x ~ s_y ~ s_z]$.
+
+Non-cuboid room layouts are represented by a triangle mesh (a list of vertices and faces).
 
 ## Evaluation
 
@@ -79,10 +87,10 @@ We offer two different scripts to run the evaluation, with different metrics as 
 
 ### 3D metrics
 
-To compute the 3D Intersection-over-Union (IoU) and Chamfer distance between the predictions and the ground truth cuboids run
+To compute the 3D Intersection-over-Union (IoU) and Chamfer distance between the predictions and the ground truth room layouts run
 
 ```bash
-python -m mvrl.evaluate --pred PRED --dataset {scannetpp,2d3ds} --split {train,val,test,all}
+python -m mvrl.evaluate --pred PRED --dataset {scannetpp,2d3ds} --split {train,val,test,multi_room}
 ```
 
 If the predictions are cuboids the script will also calculate the rotation error.
@@ -92,20 +100,22 @@ If the predictions are cuboids the script will also calculate the rotation error
 To render the predicted and ground truth room layouts in each view and compute per-pixel depth and normal angle errors use
 
 ```bash
-python -m mvrl.evaluate_pixel --root_dir ROOT_DIR --pred PRED --dataset {scannetpp,2d3ds} --split {train,val,test,all} [--num_images NUM_IMAGES]
+python -m mvrl.evaluate_pixel --root_dir ROOT_DIR --pred PRED --dataset {scannetpp,2d3ds} --split {train,val,test,multi_room} [--num_images NUM_IMAGES]
 ```
 
 If your predictions are based only on a subset of the images in each tuple (e.g. you used the first 5 images out of the 10 for ScanNet++) specify this with the `--num_images` argument.
 
-*Note*: The script assumes that the ScanNet++ DSLR images have been undistorted, which can be done by the [ScanNet++ Toolbox](https://github.com/scannetpp/scannetpp?tab=readme-ov-file#undistortion-convert-fisheye-images-to-pinhole-with-opencv).
+**Note**: The script assumes that the ScanNet++ DSLR images have been undistorted, which can be done by the [ScanNet++ Toolbox](https://github.com/scannetpp/scannetpp?tab=readme-ov-file#undistortion-convert-fisheye-images-to-pinhole-with-opencv).
 
 ## Creating the datasets
 
-Below we document the steps taken to create the two datasets. To run this code some additional dependencies are needed:
+Below we document the steps taken to create the training, validation and test splits of ScanNet++ and the 2D-3D-Semantics dataset. To run this code some additional dependencies are needed:
 
 ```bash
 pip install -r requirements_extra.txt
 ```
+
+**Note**: The ScanNet++ "multi_room" split was constructed in a different way, using an internally developed room layout annotation tool.
 
 ### ScanNet++
 
