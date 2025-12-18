@@ -19,6 +19,7 @@ def iou3d(layout1: Union[Cuboid, mrmeshpy.Mesh], layout2: Union[Cuboid, mrmeshpy
     @return The IoU.
     """
     mesh1, mesh2 = layout_to_mesh(layout1), layout_to_mesh(layout2)
+    assert mesh1.volume() > 0.0 and mesh2.volume() > 0.0, "Zero or negative volume"
     intersection = mrmeshpy.boolean(mesh1, mesh2, mrmeshpy.BooleanOperation.Intersection)
     union = mrmeshpy.boolean(mesh1, mesh2, mrmeshpy.BooleanOperation.Union)
 

@@ -33,7 +33,6 @@ def get_layout(input: Union[Dict, str], base_dir: Optional[Path] = None) -> Unio
             faces = np.array(input["faces"])
             verts = np.array(input["verts"])
             layout = mrmeshnumpy.meshFromFacesVerts(faces, verts)
-            assert layout.volume() > 0.0, "Zero or negative volume"
         else:
             raise ValueError("Invalid dictionary format for layout")
     elif isinstance(input, str):
@@ -41,7 +40,6 @@ def get_layout(input: Union[Dict, str], base_dir: Optional[Path] = None) -> Unio
         if not path.is_absolute():
             path = base_dir / path
         layout = mrmeshpy.loadMesh(path)
-        assert layout.volume() > 0.0, "Zero or negative volume"
     else:
         raise TypeError("Input must be a dictionary or a string path to a mesh file")
     return layout
