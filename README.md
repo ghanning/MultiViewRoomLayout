@@ -42,6 +42,8 @@ done
 
 The subset of cuboid-shaped scenes in ScanNet++ v2 have been split into training (391 scenes), validation (10 scenes) and test (18 scenes) sets according to the files [scenes_train.txt](dataset/scannetpp/scenes_train.txt), [scenes_val.txt](dataset/scannetpp/scenes_val.txt) and [scenes_test.txt](dataset/scannetpp/scenes_test.txt).
 
+An additional set of 160 scenes including non-cuboid rooms and multi-room scenes are available in [scenes_multi_room.txt](dataset/scannetpp/scenes_multi_room.txt).
+
 #### 2D-3D-Semantics
 
 No data split has been performed for the cuboid-shaped scenes (also called "spaces") of 2D-3D-Semantics. The 160 scenes are listed in [scenes_test.txt](dataset/2d3ds/scenes_test.txt).
@@ -56,11 +58,15 @@ Each tuple consists of 10 randomly sampled DSLR images. For the training scenes 
 
 For each space there is one tuple with 2 panoramic and 8 corresponding perspective images, see [images_test.json](dataset/2d3ds/images_test.json).
 
-### Ground truth cuboids
+### Ground truth layouts
 
-Ground truth cuboids for all scenes are available in [layouts_train.json](dataset/scannetpp/layouts_train.json), [layouts_val.json](dataset/scannetpp/layouts_val.json), [layouts_test.json](dataset/scannetpp/layouts_test.json) (ScanNet++) and [layouts_test.json](dataset/2d3ds/layouts_test.json) (2D-3D-Semantics).
+Ground truth room layouts for all scenes are available in [layouts_train.json](dataset/scannetpp/layouts_train.json), [layouts_val.json](dataset/scannetpp/layouts_val.json), [layouts_test.json](dataset/scannetpp/layouts_test.json), [layouts_multi_room.json](dataset/scannetpp/layouts_multi_room.json) (ScanNet++) and [layouts_test.json](dataset/2d3ds/layouts_test.json) (2D-3D-Semantics).
 
-The cuboids are parameterized by a rotation matrix $R$ and translation vector $t$ such that a point $x$ in scene coordinates is transformed to the cuboid's local frame via $Rx + t$. The size of the cuboid in the local frame is given by the size vector $s = [s_x ~ s_y ~ s_z]$.
+Layouts are represented as cuboids, except for rooms that are not cuboid-shaped in the "multi_room" split of ScanNet++.
+
+Cuboids are parameterized by a rotation matrix $R$ and translation vector $t$ such that a point $x$ in scene coordinates is transformed to the cuboid's local frame via $Rx + t$. The size of the cuboid in the local frame is given by the size vector $s = [s_x ~ s_y ~ s_z]$.
+
+Non-cuboid room layouts are represented by a triangle mesh (a list of vertices and faces).
 
 ## Evaluation
 
@@ -79,10 +85,10 @@ We offer two different scripts to run the evaluation, with different metrics as 
 
 ### 3D metrics
 
-To compute the 3D Intersection-over-Union (IoU) and Chamfer distance between the predictions and the ground truth cuboids run
+To compute the 3D Intersection-over-Union (IoU) and Chamfer distance between the predictions and the ground truth room layouts run
 
 ```bash
-python -m mvrl.evaluate --pred PRED --dataset {scannetpp,2d3ds} --split {train,val,test,all}
+python -m mvrl.evaluate --pred PRED --dataset {scannetpp,2d3ds} --split {train,val,test,multi_room}
 ```
 
 If the predictions are cuboids the script will also calculate the rotation error.
@@ -92,7 +98,7 @@ If the predictions are cuboids the script will also calculate the rotation error
 To render the predicted and ground truth room layouts in each view and compute per-pixel depth and normal angle errors use
 
 ```bash
-python -m mvrl.evaluate_pixel --root_dir ROOT_DIR --pred PRED --dataset {scannetpp,2d3ds} --split {train,val,test,all} [--num_images NUM_IMAGES]
+python -m mvrl.evaluate_pixel --root_dir ROOT_DIR --pred PRED --dataset {scannetpp,2d3ds} --split {train,val,test,multi_room} [--num_images NUM_IMAGES]
 ```
 
 If your predictions are based only on a subset of the images in each tuple (e.g. you used the first 5 images out of the 10 for ScanNet++) specify this with the `--num_images` argument.
