@@ -4,6 +4,7 @@ from typing import Dict, Generator, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 from meshlib import mrmeshnumpy, mrmeshpy
+from projectaria_tools.projects import ase
 
 from .cuboid import Cuboid
 
@@ -80,6 +81,22 @@ def read_nerfstudio_transforms(cache: Dict, path: Path) -> Dict:
     return cache[path]
 
 
+def Kmatrix(fx: float, fy: float, cx: float, cy: float) -> np.ndarray:
+    """! Create camera intrinsic matrix.
+
+    @param fx, fy Focal lengths.
+    @param cx, cy Principal point.
+    @return The camera intrinsic matrix.
+    """
+    return np.array(
+        [
+            [fx, 0.0, cx],
+            [0.0, fy, cy],
+            [0.0, 0.0, 1.0],
+        ]
+    )
+
+
 def get_pose_scannetpp(transforms: Dict, image: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """! Get camera parameters.
 
@@ -98,30 +115,24 @@ def get_pose_scannetpp(transforms: Dict, image: str) -> Tuple[np.ndarray, np.nda
     w2c = np.linalg.inv(c2w)
     R, t = w2c[:3, :3], w2c[:3, 3]
 
-    K = np.array(
-        [
-            [transforms["fl_x"], 0.0, transforms["cx"]],
-            [0.0, transforms["fl_y"], transforms["cy"]],
-            [0.0, 0.0, 1.0],
-        ]
-    )
+    K = Kmatrix(transforms["fl_x"], transforms["fl_y"], transforms["cx"], transforms["cy"])
 
     return R, t, K
 
 
 def get_images_scannetpp(
-    root_dir: Path, scene: str, image_names: List[str], transforms_cache: Dict
+    root_dir: Path, scene: str, image_names: List[str], cache: Dict
 ) -> Tuple[List[Tuple], Tuple[int, int]]:
     """! Get camera parameters and image paths for ScanNet++.
 
     @param root_dir Path to ScanNet++ v2 root directory.
     @param scene Scene name.
     @param image_names Image names.
-    @param transforms_cache Cached transforms data.
+    @param cache Cached transforms data.
     @return A list of (R, t, K, path) tuples and the image size.
     """
     dslr_dir = root_dir / "data" / scene / "dslr"
-    transforms = read_nerfstudio_transforms(transforms_cache, dslr_dir / "nerfstudio" / "transforms_undistorted.json")
+    transforms = read_nerfstudio_transforms(cache, dslr_dir / "nerfstudio" / "transforms_undistorted.json")
     images = list()
     for name in image_names:
         R, t, K = get_pose_scannetpp(transforms, name)
@@ -146,6 +157,44 @@ def get_images_2d3ds(root_dir: Path, scene: str, image_names: List[str]) -> Tupl
         pose_path = persp_dir / "pose" / Path(name.replace("rgb", "pose")).with_suffix(".json")
         R, t, K, image_size = read_pose_2d3ds(pose_path)
         image_path = persp_dir / "rgb" / name
+        images.append((R, t, K, image_path))
+    return images, image_size
+
+
+def get_images_ase(
+    root_dir: Path, scene: str, image_names: List[str], cache: Dict
+) -> Tuple[List[Tuple], Tuple[int, int]]:
+    """! Get camera parameters and image paths for Aria Synthetic Environments.
+
+    @param root_dir Path to Aria Synthetic Environments root directory.
+    @param scene Scene name.
+    @param image_names Image names.
+    @param cache Cached trajectory data.
+    @return A list of (R, t, K, path) tuples and the image size.
+    """
+    scene_dir = root_dir / scene
+
+    with open(root_dir / "camera_undistorted.json") as f:
+        camera = json.load(f)
+    fx, fy, cx, cy = camera["params"]
+    K = Kmatrix(fx, fy, cx, cy)
+    image_size = camera["width"], camera["height"]
+
+    trajectory_path = scene_dir / "trajectory.csv"
+    if trajectory_path not in cache:
+        cache[trajectory_path] = ase.readers.read_trajectory_file(trajectory_path)
+    trajectory = cache[trajectory_path]["Ts_world_from_device"]
+
+    device = ase.get_ase_rgb_calibration()
+    T_d2c = device.get_transform_device_camera().inverse()
+
+    images = list()
+    for name in image_names:
+        idx = int(name[8:15])  # "vignette0000043.jpg"
+        T_w2d = trajectory[idx].inverse()
+        T_w2c = T_d2c @ T_w2d
+        R, t = T_w2c.rotation().to_matrix(), T_w2c.translation()
+        image_path = scene_dir / "rgb_undistorted" / name
         images.append((R, t, K, image_path))
     return images, image_size
 

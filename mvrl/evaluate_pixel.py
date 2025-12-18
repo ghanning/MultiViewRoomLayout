@@ -13,19 +13,18 @@ from .utils import (
     dataset_dir,
     flatten_multi_room,
     get_images_2d3ds,
+    get_images_ase,
     get_images_scannetpp,
     get_layout,
 )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate predicted layouts (pixel-wise metrics)")
-    parser.add_argument(
-        "--root_dir", "-rd", type=Path, required=True, help="Path to ScanNet++ v2 or 2D-3D-Semantics root directory"
-    )
+    parser.add_argument("--root_dir", "-rd", type=Path, required=True, help="Path to dataset root directory")
     parser.add_argument("--pred", "-p", type=Path, required=True, help="Path to file with layout predictions")
     parser.add_argument("--dataset", "-d", required=True, choices=DATASETS, help="Dataset")
     parser.add_argument("--split", "-s", required=True, help="Data split ('train', 'val', 'test' etc.)")
-    parser.add_argument("--num_images", "-ni", type=int, help="Number of images per tuple (ScanNet++)")
+    parser.add_argument("--num_images", "-ni", type=int, help="Number of images per tuple (ScanNet++/ASE)")
     parser.add_argument(
         "--normal_angle_threshold", "-nat", type=float, default=10.0, help="Normal angle error threshold"
     )
@@ -49,7 +48,7 @@ if __name__ == "__main__":
     depth_metric = Metric("Depth RMSE", unit="m")
     normal_metric = Metric(f"Normal angle error (recall @ {args.normal_angle_threshold} deg)")
 
-    transforms_cache = dict()
+    cache = dict()
     renderer = None
     num_views_skipped, num_views_total = 0, 0
 
@@ -60,10 +59,12 @@ if __name__ == "__main__":
 
         if args.dataset == "scannetpp":
             images, image_size = get_images_scannetpp(
-                args.root_dir, scene, image_tuple["images"][: args.num_images], transforms_cache
+                args.root_dir, scene, image_tuple["images"][: args.num_images], cache
             )
-        else:
+        elif args.dataset == "2d3ds":
             images, image_size = get_images_2d3ds(args.root_dir, scene, image_tuple["perspective_images"])
+        else:  # ase
+            images, image_size = get_images_ase(args.root_dir, scene, image_tuple["images"][: args.num_images], cache)
 
         if not isinstance(layouts_pred, list):
             layouts_pred = [layouts_pred]
