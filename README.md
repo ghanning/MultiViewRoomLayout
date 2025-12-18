@@ -1,11 +1,11 @@
-# Multi-view cuboid room layout estimation
+# Multi-view room layout estimation
 
-This repository contains two datasets, based on [ScanNet++](https://kaldir.vc.in.tum.de/scannetpp/) and [2D-3D-Semantics](https://github.com/alexsax/2D-3D-Semantics), for benchmarking *multi-view cuboid room layout estimation*.
+This repository contains two datasets, based on [ScanNet++](https://kaldir.vc.in.tum.de/scannetpp/) and [2D-3D-Semantics](https://github.com/alexsax/2D-3D-Semantics), for benchmarking *multi-view room layout estimation*.
 
-Each dataset consists of a set of *image tuples* and corresponding *ground truth cuboids*. We supply scripts to evaluate predicted room layouts against the ground truth.
+Each dataset consists of a set of *image tuples* and corresponding *ground truth room layouts*. We supply scripts to evaluate predicted layouts against the ground truth.
 
-![Multi-view cuboid room layout estimation](assets/teaser.jpg)
-*Given images with known camera poses captured inside a cuboid-shaped room the goal is to estimate the room layout.*
+![Multi-view room layout estimation](assets/teaser.jpg)
+*Given images with known camera poses captured inside a room the goal is to estimate the room layout.*
 
 The datasets were created during the course of our work on the room layout estimation method [PixCuboid](https://github.com/ghanning/PixCuboid).
 
