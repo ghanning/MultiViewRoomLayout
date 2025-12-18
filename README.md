@@ -76,6 +76,7 @@ For each space there is one tuple with 2 panoramic and 8 corresponding perspecti
 
 #### Aria Synthetic Environments
 
+For each scene 5 image tuples were generated, with 20 images per room ([images_val.json](dataset/ase/images_val.json), [images_test.json](dataset/ase/images_test.json)).
 
 ### Ground truth layouts
 
