@@ -29,10 +29,10 @@ def iou3d(layout1: Union[Cuboid, mrmeshpy.Mesh], layout2: Union[Cuboid, mrmeshpy
         from .visualization import visualize_layout, visualize_mesh
 
         rr.init("iou3d", spawn=True)
-        visualize_layout("layout1", layout1)
-        visualize_layout("layout2", layout2)
-        visualize_mesh("intersection", intersection.mesh)
-        visualize_mesh("union", union.mesh)
+        visualize_layout("layout1", layout1, color=[246, 205, 97])
+        visualize_layout("layout2", layout2, color=[14, 154, 167])
+        visualize_mesh("intersection", intersection.mesh, albedo_factor=[254, 138, 113, 128])
+        visualize_mesh("union", union.mesh, albedo_factor=[74, 78, 77, 128])
         breakpoint()
 
     return intersection.mesh.volume() / union.mesh.volume()
