@@ -103,15 +103,17 @@ python -m mvrl.evaluate_pixel --root_dir ROOT_DIR --pred PRED --dataset {scannet
 
 If your predictions are based only on a subset of the images in each tuple (e.g. you used the first 5 images out of the 10 for ScanNet++) specify this with the `--num_images` argument.
 
-*Note*: The script assumes that the ScanNet++ DSLR images have been undistorted, which can be done by the [ScanNet++ Toolbox](https://github.com/scannetpp/scannetpp?tab=readme-ov-file#undistortion-convert-fisheye-images-to-pinhole-with-opencv).
+**Note**: The script assumes that the ScanNet++ DSLR images have been undistorted, which can be done by the [ScanNet++ Toolbox](https://github.com/scannetpp/scannetpp?tab=readme-ov-file#undistortion-convert-fisheye-images-to-pinhole-with-opencv).
 
 ## Creating the datasets
 
-Below we document the steps taken to create the two datasets. To run this code some additional dependencies are needed:
+Below we document the steps taken to create the training, validation and test splits of ScanNet++ and the 2D-3D-Semantics dataset. To run this code some additional dependencies are needed:
 
 ```bash
 pip install -r requirements_extra.txt
 ```
+
+**Note**: The ScanNet++ "multi_room" split was constructed in a different way, using an internally developed room layout annotation tool.
 
 ### ScanNet++
 
