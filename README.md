@@ -52,7 +52,9 @@ No data split has been performed for the cuboid-shaped scenes (also called "spac
 
 #### ScanNet++
 
-Each tuple consists of 10 randomly sampled DSLR images. For the training scenes 250 tuples were generated whereas the validation and test scenes each have 20 image tuples. The tuples can be found in the files [images_train.json](dataset/scannetpp/images_train.json), [images_val.json](dataset/scannetpp/images_val.json) and [images_test.json](dataset/scannetpp/images_test.json).
+Each tuple consists of randomly sampled DSLR images. For the training scenes 250 tuples were generated whereas the validation and test scenes each have 20 image tuples - all containing 10 images. The tuples can be found in the files [images_train.json](dataset/scannetpp/images_train.json), [images_val.json](dataset/scannetpp/images_val.json) and [images_test.json](dataset/scannetpp/images_test.json).
+
+For the "multi_room" split 3 image tuples, with 20 DSLR images per room, were generated for every scene. These are given in [images_multi_room.json](dataset/scannetpp/images_multi_room.json).
 
 #### 2D-3D-Semantics
 
