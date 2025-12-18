@@ -50,13 +50,13 @@ if __name__ == "__main__":
             ious = [iou3d(layout_gt, layout_pred) for layout_pred in layouts_pred]
             idx = np.argmax(ious)
             iou_metric.add(ious[idx])
-            if isinstance(layouts_pred[idx], Cuboid):
+            if isinstance(layout_gt, Cuboid) and isinstance(layouts_pred[idx], Cuboid):
                 rot_metric.add(np.rad2deg(rotation_error(layout_gt, layouts_pred[idx])))
             chamfer_metric.add(chamfer_distance(layout_gt, layouts_pred[idx], seed))
         else:
             for layout_pred in layouts_pred:
                 iou_metric.add(iou3d(layout_gt, layout_pred))
-                if isinstance(layout_pred, Cuboid):
+                if isinstance(layout_gt, Cuboid) and isinstance(layout_pred, Cuboid):
                     rot_metric.add(np.rad2deg(rotation_error(layout_gt, layout_pred)))
                 chamfer_metric.add(chamfer_distance(layout_gt, layout_pred, seed))
 
