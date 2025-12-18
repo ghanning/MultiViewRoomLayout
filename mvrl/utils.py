@@ -30,8 +30,8 @@ def get_layout(input: Union[Dict, str], base_dir: Optional[Path] = None) -> Unio
         if "R" in input and "t" in input and "s" in input:
             layout = Cuboid.from_dict(input)
         elif "faces" in input and "verts" in input:
-            faces = np.array(input["faces"])
-            verts = np.array(input["verts"])
+            faces = np.array(input["faces"]).reshape(-1, 3)
+            verts = np.array(input["verts"]).reshape(-1, 3)
             layout = mrmeshnumpy.meshFromFacesVerts(faces, verts)
         else:
             raise ValueError("Invalid dictionary format for layout")
