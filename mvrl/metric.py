@@ -71,6 +71,7 @@ class Metric:
         @return The summary.
         """
         s = f"### {self.name} ###\n"
+        s += f"Count : {len(self.values)}\n"
         s += f"Min   : {self.min():.3f} {self.unit}\n"
         s += f"Max   : {self.max():.3f} {self.unit}\n"
         s += f"Mean  : {self.mean():.3f} {self.unit}\n"
