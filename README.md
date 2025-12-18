@@ -1,6 +1,6 @@
 # Multi-view room layout estimation
 
-This repository contains two datasets, based on [ScanNet++](https://kaldir.vc.in.tum.de/scannetpp/) and [2D-3D-Semantics](https://github.com/alexsax/2D-3D-Semantics), for benchmarking *multi-view room layout estimation*.
+This repository contains three datasets, based on [ScanNet++](https://kaldir.vc.in.tum.de/scannetpp/), [2D-3D-Semantics](https://github.com/alexsax/2D-3D-Semantics) and [Aria Synthetic Environments](https://www.projectaria.com/datasets/ase/), for benchmarking *multi-view room layout estimation*.
 
 Each dataset consists of a set of *image tuples* and corresponding *ground truth room layouts*. We supply scripts to evaluate predicted layouts against the ground truth.
 
@@ -23,7 +23,9 @@ pip install -r requirements.txt
 
 ### Images and camera poses
 
-Download images and camera poses from the [ScanNet++](https://kaldir.vc.in.tum.de/scannetpp/) and [2D-3D-Semantics](https://github.com/alexsax/2D-3D-Semantics) web sites.
+Download images and camera poses from the [ScanNet++](https://kaldir.vc.in.tum.de/scannetpp/), [2D-3D-Semantics](https://github.com/alexsax/2D-3D-Semantics) and [Aria Synthetic Environments](https://www.projectaria.com/datasets/ase/) web sites.
+
+*Tip*: For Aria Synthetic Environments download the 200 scenes in our validation and test sets by passing ```--scene-ids "`paste -d, -s dataset/ase/scenes_val.txt`,`paste -d, -s dataset/ase/scenes_test.txt`"``` to their download script.
 
 #### Perspective images (2D-3D-Semantics)
 
@@ -34,6 +36,14 @@ for area in area_1 area_2 area_3 area_4 area_5a area_5b area_6
 do
   python -m mvrl.pano_to_persp_2d3ds --root_dir ROOT_DIR --area $area
 done
+```
+
+#### Image undistortion (Aria Synthetic Environments)
+
+Undistort the fisheye images by running
+
+```bash
+python -m mvrl.undistort_images_ase --root_dir ROOT_DIR
 ```
 
 ### Scenes
