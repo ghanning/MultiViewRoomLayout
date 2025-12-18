@@ -9,6 +9,7 @@ from .metric import Metric
 from .metrics import depth_normal_error
 from .renderer import Renderer
 from .utils import (
+    DATASETS,
     dataset_dir,
     flatten_multi_room,
     get_images_2d3ds,
@@ -22,7 +23,7 @@ if __name__ == "__main__":
         "--root_dir", "-rd", type=Path, required=True, help="Path to ScanNet++ v2 or 2D-3D-Semantics root directory"
     )
     parser.add_argument("--pred", "-p", type=Path, required=True, help="Path to file with layout predictions")
-    parser.add_argument("--dataset", "-d", required=True, choices=("scannetpp", "2d3ds"), help="Dataset")
+    parser.add_argument("--dataset", "-d", required=True, choices=DATASETS, help="Dataset")
     parser.add_argument("--split", "-s", required=True, help="Data split ('train', 'val', 'test' etc.)")
     parser.add_argument("--num_images", "-ni", type=int, help="Number of images per tuple (ScanNet++)")
     parser.add_argument(
@@ -39,7 +40,7 @@ if __name__ == "__main__":
     with open(args.pred) as f:
         layout_preds_per_tuple = json.load(f)
 
-    if args.split == "multi_room":
+    if args.dataset == "ase" or args.split == "multi_room":
         image_tuples, layouts_gt, layout_preds_per_tuple = flatten_multi_room(
             image_tuples, layouts_gt, layout_preds_per_tuple
         )

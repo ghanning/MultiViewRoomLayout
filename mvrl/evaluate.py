@@ -8,12 +8,12 @@ import tqdm
 from .cuboid import Cuboid
 from .metric import Metric
 from .metrics import chamfer_distance, iou3d, rotation_error
-from .utils import dataset_dir, flatten_multi_room, get_layout
+from .utils import DATASETS, dataset_dir, flatten_multi_room, get_layout
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate predicted layouts")
     parser.add_argument("--pred", "-p", type=Path, required=True, help="Path to file with layout predictions")
-    parser.add_argument("--dataset", "-d", required=True, choices=("scannetpp", "2d3ds"), help="Dataset")
+    parser.add_argument("--dataset", "-d", required=True, choices=DATASETS, help="Dataset")
     parser.add_argument("--split", "-s", required=True, help="Data split ('train', 'val', 'test' etc.)")
     parser.add_argument("--use_best", "-ub", action="store_true", help="Use prediction with highest IoU for each scene")
     args = parser.parse_args()
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     with open(args.pred) as f:
         layout_preds_per_tuple = json.load(f)
 
-    if args.split == "multi_room":
+    if args.dataset == "ase" or args.split == "multi_room":
         image_tuples, layouts_gt, layout_preds_per_tuple = flatten_multi_room(
             image_tuples, layouts_gt, layout_preds_per_tuple
         )

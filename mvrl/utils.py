@@ -7,6 +7,8 @@ from meshlib import mrmeshnumpy, mrmeshpy
 
 from .cuboid import Cuboid
 
+DATASETS = {"scannetpp", "2d3ds", "ase"}
+
 
 def dataset_dir() -> Path:
     """! Get the path to the dataset directory.
