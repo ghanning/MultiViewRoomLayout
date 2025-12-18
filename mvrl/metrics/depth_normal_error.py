@@ -87,6 +87,9 @@ def depth_normal_error(
     @param image_path Image path (for debugging purposes).
     @return The depth RMSE and the normal angle error (ratio of pixels with normal angle error < normal_angle_thr).
     """
+    if any(isinstance(x, mrmeshpy.Mesh) and x.topology.numValidFaces() == 0 for x in (layout1, layout2)):
+        return np.nan, np.nan
+
     world_to_camera = np.eye(4)
     world_to_camera[:3, :3] = R
     world_to_camera[:3, 3] = t
