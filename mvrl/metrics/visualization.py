@@ -25,6 +25,6 @@ def visualize_mesh(name: str, mesh: mrmeshpy.Mesh, albedo_factor: Optional[Rgba3
 def visualize_layout(name: str, layout: Union[Cuboid, mrmeshpy.Mesh], color: Optional[Rgba32Like] = None) -> None:
     rr.log(name, rr.Clear(recursive=False))
     if isinstance(layout, Cuboid):
-        visualize_cuboid(name, layout, color=color)
+        visualize_cuboid(name, layout, color=color[:3] if color is not None else None)
     else:
         visualize_mesh(name, layout, albedo_factor=color)

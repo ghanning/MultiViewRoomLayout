@@ -119,8 +119,8 @@ def depth_normal_error(
         from .visualization import visualize_camera, visualize_layout
 
         rr.init("depth_normal_error", spawn=True)
-        visualize_layout("layout1", layout1, color=[246, 205, 97])
-        visualize_layout("layout2", layout2, color=[14, 154, 167])
+        visualize_layout("layout1", layout1, color=[246, 205, 97, 128])
+        visualize_layout("layout2", layout2, color=[14, 154, 167, 128])
         visualize_camera("camera", R, t, K, depth1.shape[1], depth1.shape[0])
         depth1[np.isclose(depth1, zfar)] = 0.0
         depth2[np.isclose(depth2, zfar)] = 0.0
