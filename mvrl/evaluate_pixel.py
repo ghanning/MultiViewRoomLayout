@@ -5,11 +5,16 @@ from pathlib import Path
 import numpy as np
 import tqdm
 
-from .cuboid import Cuboid
 from .metric import Metric
 from .metrics import depth_normal_error
 from .renderer import Renderer
-from .utils import dataset_dir, get_images_2d3ds, get_images_scannetpp, get_layout
+from .utils import (
+    dataset_dir,
+    flatten_multi_room,
+    get_images_2d3ds,
+    get_images_scannetpp,
+    get_layout,
+)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate predicted layouts (pixel-wise metrics)")
@@ -18,7 +23,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--pred", "-p", type=Path, required=True, help="Path to file with layout predictions")
     parser.add_argument("--dataset", "-d", required=True, choices=("scannetpp", "2d3ds"), help="Dataset")
-    parser.add_argument("--split", "-s", required=True, choices=("train", "val", "test"), help="Data split")
+    parser.add_argument("--split", "-s", required=True, help="Data split ('train', 'val', 'test' etc.)")
     parser.add_argument("--num_images", "-ni", type=int, help="Number of images per tuple (ScanNet++)")
     parser.add_argument(
         "--normal_angle_threshold", "-nat", type=float, default=10.0, help="Normal angle error threshold"
@@ -30,10 +35,15 @@ if __name__ == "__main__":
         image_tuples = json.load(f)
 
     with open(dataset_dir() / args.dataset / f"layouts_{args.split}.json") as f:
-        cuboid_params_gt = json.load(f)
+        layouts_gt = json.load(f)
 
     with open(args.pred) as f:
         layout_preds_per_tuple = json.load(f)
+
+    if args.split == "multi_room":
+        image_tuples, layouts_gt, layout_preds_per_tuple = flatten_multi_room(
+            image_tuples, layouts_gt, layout_preds_per_tuple
+        )
     assert len(layout_preds_per_tuple) == len(image_tuples)
 
     depth_metric = Metric("Depth RMSE", unit="m")
@@ -45,7 +55,8 @@ if __name__ == "__main__":
 
     for image_tuple, layouts_pred in tqdm.tqdm(list(zip(image_tuples, layout_preds_per_tuple))):
         scene = image_tuple["scene"]
-        cuboid_gt = Cuboid.from_dict(cuboid_params_gt[scene])
+        layout_gt = get_layout(layouts_gt[scene])
+        scene = scene.split(":")[0]
 
         if args.dataset == "scannetpp":
             images, image_size = get_images_scannetpp(
@@ -70,7 +81,7 @@ if __name__ == "__main__":
                 assert args.dataset == "2d3ds"
                 pred_idx = image_idx // (len(images) // len(image_tuple["images"]))
             depth_rmse, normal_error = depth_normal_error(
-                cuboid_gt, layouts_pred[pred_idx], renderer, R, t, K, np.deg2rad(args.normal_angle_threshold), path
+                layout_gt, layouts_pred[pred_idx], renderer, R, t, K, np.deg2rad(args.normal_angle_threshold), path
             )
             if np.isnan(depth_rmse) or np.isnan(normal_error):
                 if args.skip:
