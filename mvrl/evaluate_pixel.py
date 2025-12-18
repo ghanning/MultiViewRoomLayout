@@ -28,7 +28,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--normal_angle_threshold", "-nat", type=float, default=10.0, help="Normal angle error threshold"
     )
-    parser.add_argument("--skip", "-sk", action="store_true", help="Skip views for which metrics could not be computed")
     args = parser.parse_args()
 
     with open(dataset_dir() / args.dataset / f"images_{args.split}.json") as f:
@@ -51,7 +50,7 @@ if __name__ == "__main__":
 
     transforms_cache = dict()
     renderer = None
-    num_skip, num_tot = 0, 0
+    num_views_skipped, num_views_total = 0, 0
 
     for image_tuple, layouts_pred in tqdm.tqdm(list(zip(image_tuples, layout_preds_per_tuple))):
         scene = image_tuple["scene"]
@@ -84,20 +83,17 @@ if __name__ == "__main__":
                 layout_gt, layouts_pred[pred_idx], renderer, R, t, K, np.deg2rad(args.normal_angle_threshold), path
             )
             if np.isnan(depth_rmse) or np.isnan(normal_error):
-                if args.skip:
-                    num_skip += 1
-                else:
-                    raise RuntimeError("Failed to compute metrics")
+                num_views_skipped += 1
             else:
                 depth_metric.add(depth_rmse)
                 normal_metric.add(normal_error)
 
-        num_tot += len(images)
+        num_views_total += len(images)
 
     print(depth_metric.summary())
     print(normal_metric.summary())
 
-    if num_skip > 0:
-        print(f"Skipped {num_skip} out of {num_tot} views")
+    if num_views_skipped > 0:
+        print(f"WARNING: Skipped {num_views_skipped} out of {num_views_total} views")
 
     del renderer
