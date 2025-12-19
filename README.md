@@ -115,7 +115,7 @@ To compute the 3D Intersection-over-Union (IoU) and Chamfer distance between the
 python -m mvrl.evaluate --pred PRED --dataset {scannetpp,2d3ds,ase} --split {train,val,test,multi_room}
 ```
 
-If the predictions are cuboids the script will also calculate the rotation error.
+The script also calculates the "wall recall" (i.e. how many of the walls that were successfully captured by the predictions), and the rotation error if the predictions are cuboids.
 
 ### Pixel-wise metrics
 
