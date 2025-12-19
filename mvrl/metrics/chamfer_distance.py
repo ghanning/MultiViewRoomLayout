@@ -29,6 +29,8 @@ def chamfer_distance(
     @param seed Random seed value.
     @return The Chamfer distance.
     """
+    if any(isinstance(x, mrmeshpy.Mesh) and x.topology.numValidFaces() == 0 for x in (layout1, layout2)):
+        return np.nan
     mesh1, mesh2 = layout_to_open3d_mesh(layout1), layout_to_open3d_mesh(layout2)
     params = open3d.t.geometry.MetricParameters()
     if seed is not None:
