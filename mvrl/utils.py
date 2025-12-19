@@ -275,3 +275,20 @@ def merge_layouts(layouts: Dict) -> Dict:
         layouts_merged[scene] = {"faces": np.vstack(faces).tolist(), "verts": np.vstack(verts).tolist()}
 
     return layouts_merged
+
+
+def remove_floor_ceiling(layouts: Dict, up: np.ndarray = np.array([0, 0, 1])) -> Dict:
+    """! Remove floor and ceiling faces from layouts.
+
+    @param layouts The layouts.
+    @return The layouts without floor and ceiling.
+    """
+    layouts_new = {}
+    for scene, layout in layouts.items():
+        mesh = layout_to_mesh(get_layout(layout))
+        faces = mrmeshnumpy.getNumpyFaces(mesh.topology)
+        verts = mrmeshnumpy.getNumpyVerts(mesh)
+        normals = np.array([[n.x, n.y, n.z] for n in mrmeshpy.computePerFaceNormals(mesh)])
+        mask = np.abs(normals @ up) < 0.5
+        layouts_new[scene] = {"faces": faces[mask].tolist(), "verts": verts.tolist()}
+    return layouts_new
