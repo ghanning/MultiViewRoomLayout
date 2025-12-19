@@ -1,3 +1,5 @@
+from typing import List, Union
+
 import numpy as np
 
 
@@ -14,12 +16,15 @@ class Metric:
         self.unit = unit
         self.values = list()
 
-    def add(self, value: float) -> None:
+    def add(self, value: Union[float, List[float]]) -> None:
         """! Add a value.
 
         @param value Value to add.
         """
-        self.values.append(value)
+        if isinstance(value, list):
+            self.values.extend(value)
+        else:
+            self.values.append(value)
 
     def min(self) -> float:
         """! Get minimum value.
@@ -71,6 +76,7 @@ class Metric:
         @return The summary.
         """
         s = f"### {self.name} ###\n"
+        s += f"Count : {len(self.values)}\n"
         s += f"Min   : {self.min():.3f} {self.unit}\n"
         s += f"Max   : {self.max():.3f} {self.unit}\n"
         s += f"Mean  : {self.mean():.3f} {self.unit}\n"

@@ -1,15 +1,9 @@
 from typing import Union
 
-from meshlib import mrmeshnumpy, mrmeshpy
+from meshlib import mrmeshpy
 
 from ..cuboid import Cuboid
-
-
-def layout_to_mesh(layout: Union[Cuboid, mrmeshpy.Mesh]) -> mrmeshpy.Mesh:
-    if isinstance(layout, Cuboid):
-        return mrmeshnumpy.meshFromFacesVerts(layout.faces, layout.corners)
-    else:
-        return layout
+from ..utils import layout_to_mesh
 
 
 def iou3d(layout1: Union[Cuboid, mrmeshpy.Mesh], layout2: Union[Cuboid, mrmeshpy.Mesh]) -> float:

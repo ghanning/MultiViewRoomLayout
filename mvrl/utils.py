@@ -48,6 +48,18 @@ def get_layout(input: Union[Dict, str], base_dir: Optional[Path] = None) -> Unio
     return layout
 
 
+def layout_to_mesh(layout: Union[Cuboid, mrmeshpy.Mesh]) -> mrmeshpy.Mesh:
+    """! Convert layout to triangle mesh.
+
+    @param layout The layout (either cuboid or triangle mesh).
+    @return The triangle mesh.
+    """
+    if isinstance(layout, Cuboid):
+        return mrmeshnumpy.meshFromFacesVerts(layout.faces, layout.corners)
+    else:
+        return layout
+
+
 def read_pose_2d3ds(path: Path) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[Tuple[int, int]]]:
     """! Read 2D-3D-Semantics pose file.
 

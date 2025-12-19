@@ -7,7 +7,7 @@ import tqdm
 
 from .cuboid import Cuboid
 from .metric import Metric
-from .metrics import chamfer_distance, iou3d, rotation_error
+from .metrics import chamfer_distance, iou3d, rotation_error, wall_recall
 from .utils import DATASETS, dataset_dir, flatten_multi_room, get_layout
 
 if __name__ == "__main__":
@@ -15,6 +15,9 @@ if __name__ == "__main__":
     parser.add_argument("--pred", "-p", type=Path, required=True, help="Path to file with layout predictions")
     parser.add_argument("--dataset", "-d", required=True, choices=DATASETS, help="Dataset")
     parser.add_argument("--split", "-s", required=True, help="Data split ('train', 'val', 'test' etc.)")
+    parser.add_argument(
+        "--metrics", "-m", nargs="+", default=["iou", "rotation", "chamfer", "recall"], help="Metrics to evaluate"
+    )
     parser.add_argument("--use_best", "-ub", action="store_true", help="Use prediction with highest IoU for each scene")
     args = parser.parse_args()
 
@@ -36,6 +39,8 @@ if __name__ == "__main__":
     iou_metric = Metric("IoU")
     rot_metric = Metric("Rotation error", unit="deg")
     chamfer_metric = Metric("Chamfer distance", unit="m")
+    wall_metric = Metric("Wall recall")
+    room_metric = Metric("Room recall")
     seed = 1234
 
     for image_tuple, layouts_pred in tqdm.tqdm(list(zip(image_tuples, layout_preds_per_tuple))):
@@ -47,20 +52,38 @@ if __name__ == "__main__":
         layouts_pred = [get_layout(p, args.pred.parent) for p in layouts_pred]
 
         if args.use_best:
+            assert "iou" in args.metrics, "IoU metric required for best layout selection"
             ious = [iou3d(layout_gt, layout_pred) for layout_pred in layouts_pred]
             idx = np.argmax(ious)
             iou_metric.add(ious[idx])
-            if isinstance(layouts_pred[idx], Cuboid):
+            if isinstance(layout_gt, Cuboid) and isinstance(layouts_pred[idx], Cuboid) and "rotation" in args.metrics:
                 rot_metric.add(np.rad2deg(rotation_error(layout_gt, layouts_pred[idx])))
-            chamfer_metric.add(chamfer_distance(layout_gt, layouts_pred[idx], seed))
+            if "chamfer" in args.metrics:
+                chamfer_metric.add(chamfer_distance(layout_gt, layouts_pred[idx], seed))
+            if "recall" in args.metrics:
+                recall = wall_recall(layout_gt, layouts_pred[idx])
+                wall_metric.add(recall)
+                room_metric.add(all(recall))
         else:
             for layout_pred in layouts_pred:
-                iou_metric.add(iou3d(layout_gt, layout_pred))
-                if isinstance(layout_pred, Cuboid):
+                if "iou" in args.metrics:
+                    iou_metric.add(iou3d(layout_gt, layout_pred))
+                if isinstance(layout_gt, Cuboid) and isinstance(layout_pred, Cuboid) and "rotation" in args.metrics:
                     rot_metric.add(np.rad2deg(rotation_error(layout_gt, layout_pred)))
-                chamfer_metric.add(chamfer_distance(layout_gt, layout_pred, seed))
+                if "chamfer" in args.metrics:
+                    chamfer_metric.add(chamfer_distance(layout_gt, layout_pred, seed))
+                if "recall" in args.metrics:
+                    recall = wall_recall(layout_gt, layout_pred)
+                    wall_metric.add(recall)
+                    room_metric.add(all(recall))
 
-    print(iou_metric.summary())
+    if iou_metric.values:
+        print(iou_metric.summary())
     if rot_metric.values:
         print(rot_metric.summary(auc_thr=[1, 5, 10, 20]))
-    print(chamfer_metric.summary())
+    if chamfer_metric.values:
+        print(chamfer_metric.summary())
+    if wall_metric.values:
+        print(wall_metric.summary())
+    if room_metric.values:
+        print(room_metric.summary())
