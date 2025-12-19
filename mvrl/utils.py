@@ -229,7 +229,9 @@ def flatten_multi_room(image_tuples: List, layouts_gt: Dict, layouts_pred: List)
     @param layouts_pred Predicted layouts.
     @return The split dataset.
     """
-    image_tuples_new, layouts_gt_new, layouts_pred_new = [], {}, []
+    image_tuples_new, layouts_gt_new = [], {}
+    split_pred = len(layouts_pred) == len(image_tuples)
+    layouts_pred_new = [] if split_pred else layouts_pred
 
     for idx, image_tuple in enumerate(image_tuples):
         scene = image_tuple["scene"]
@@ -241,7 +243,8 @@ def flatten_multi_room(image_tuples: List, layouts_gt: Dict, layouts_pred: List)
             if "perspective_images" in image_tuple:  # 2d3ds
                 new_tuple["perspective_images"] = image_tuple["perspective_images"][room]
             image_tuples_new.append(new_tuple)
-            layouts_pred_new.append(layouts_pred[idx][room])
+            if split_pred:
+                layouts_pred_new.append(layouts_pred[idx][room])
 
     for scene, layouts in layouts_gt.items():
         for room, layout in layouts.items():
