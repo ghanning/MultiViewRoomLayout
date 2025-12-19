@@ -126,7 +126,7 @@ def wall_recall(
     clusters = [c for c in clusters if abs(dot(normals[c[0]], up)) < 0.5]  # Remove floor/ceiling
 
     success = []
-    for c in clusters:
+    for c in clusters:  # Loop over walls
         points, quad = sample_points(mesh_gt, c)
         if mesh_pred.topology.numValidFaces() > 0:
             dist = np.array([mesh_pred.signedDistance(mrmeshpy.Vector3f(p[0], p[1], p[2])) for p in points])

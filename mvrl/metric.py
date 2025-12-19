@@ -2,6 +2,11 @@ from typing import List, Union
 
 import numpy as np
 
+BOLD = "\033[1m"
+ENDC = "\033[0m"
+RED = "\033[31m"
+MAGENTA = "\033[35m"
+
 
 class Metric:
     """! Error metric class."""
@@ -15,6 +20,7 @@ class Metric:
         self.name = name
         self.unit = unit
         self.values = list()
+        self.num_skipped = 0
 
     def add(self, value: Union[float, List[float]]) -> None:
         """! Add a value.
@@ -22,9 +28,13 @@ class Metric:
         @param value Value to add.
         """
         if isinstance(value, list):
-            self.values.extend(value)
+            for v in value:
+                self.add(v)
         else:
-            self.values.append(value)
+            if np.isnan(value):
+                self.num_skipped += 1
+            else:
+                self.values.append(value)
 
     def min(self) -> float:
         """! Get minimum value.
@@ -75,12 +85,22 @@ class Metric:
         @param auc_thr AUC thresholds.
         @return The summary.
         """
-        s = f"### {self.name} ###\n"
-        s += f"Count : {len(self.values)}\n"
-        s += f"Min   : {self.min():.3f} {self.unit}\n"
-        s += f"Max   : {self.max():.3f} {self.unit}\n"
-        s += f"Mean  : {self.mean():.3f} {self.unit}\n"
-        s += f"Median: {self.median():.3f} {self.unit}\n"
+        s = f"{MAGENTA}{self.name}{ENDC}\n"
+        s += f"{BOLD}Count{ENDC}  : {len(self.values)}\n"
+        if self.num_skipped > 0:
+            s += f"{BOLD}{RED}Skipped{ENDC}{RED}: {self.num_skipped}{ENDC}\n"
+        s += f"{BOLD}Min{ENDC}    : {self.min():.3f} {self.unit}\n"
+        s += f"{BOLD}Max{ENDC}    : {self.max():.3f} {self.unit}\n"
+        s += f"{BOLD}Mean{ENDC}   : {self.mean():.3f} {self.unit}\n"
+        s += f"{BOLD}Median{ENDC} : {self.median():.3f} {self.unit}\n"
         for thr in auc_thr:
-            s += f"AUC@{thr:2d}: {self.auc(thr):.3f}\n"
+            s += f"{BOLD}AUC@{thr:2d}{ENDC} : {self.auc(thr):.3f}\n"
         return s
+
+    def print(self, auc_thr: list = []) -> None:
+        """! Print summary.
+
+        @param auc_thr AUC thresholds.
+        """
+        if self.values:
+            print(self.summary(auc_thr))

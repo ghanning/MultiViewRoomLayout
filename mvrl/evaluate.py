@@ -8,7 +8,14 @@ import tqdm
 from .cuboid import Cuboid
 from .metric import Metric
 from .metrics import chamfer_distance, iou3d, rotation_error, wall_recall
-from .utils import DATASETS, dataset_dir, flatten_multi_room, get_layout
+from .utils import (
+    DATASETS,
+    dataset_dir,
+    flatten_multi_room,
+    get_layout,
+    merge_layouts,
+    remove_floor_ceiling,
+)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate predicted layouts")
@@ -19,6 +26,10 @@ if __name__ == "__main__":
         "--metrics", "-m", nargs="+", default=["iou", "rotation", "chamfer", "recall"], help="Metrics to evaluate"
     )
     parser.add_argument("--use_best", "-ub", action="store_true", help="Use prediction with highest IoU for each scene")
+    parser.add_argument("--combine_rooms", "-cr", action="store_true", help="Combine multi-room ground truth layouts")
+    parser.add_argument(
+        "--only_walls", "-ow", action="store_true", help="Remove floor and ceiling from ground truth layouts"
+    )
     args = parser.parse_args()
 
     with open(dataset_dir() / args.dataset / f"images_{args.split}.json") as f:
@@ -34,7 +45,12 @@ if __name__ == "__main__":
         image_tuples, layouts_gt, layout_preds_per_tuple = flatten_multi_room(
             image_tuples, layouts_gt, layout_preds_per_tuple
         )
+        if args.combine_rooms:
+            layouts_gt = merge_layouts(layouts_gt)
     assert len(layout_preds_per_tuple) == len(image_tuples)
+
+    if args.only_walls:
+        layouts_gt = remove_floor_ceiling(layouts_gt)
 
     iou_metric = Metric("IoU")
     rot_metric = Metric("Rotation error", unit="deg")
@@ -45,6 +61,8 @@ if __name__ == "__main__":
 
     for image_tuple, layouts_pred in tqdm.tqdm(list(zip(image_tuples, layout_preds_per_tuple))):
         scene = image_tuple["scene"]
+        if args.combine_rooms:
+            scene = scene.split(":")[0]
         layout_gt = get_layout(layouts_gt[scene])
 
         if not isinstance(layouts_pred, list):
@@ -77,13 +95,8 @@ if __name__ == "__main__":
                     wall_metric.add(recall)
                     room_metric.add(all(recall))
 
-    if iou_metric.values:
-        print(iou_metric.summary())
-    if rot_metric.values:
-        print(rot_metric.summary(auc_thr=[1, 5, 10, 20]))
-    if chamfer_metric.values:
-        print(chamfer_metric.summary())
-    if wall_metric.values:
-        print(wall_metric.summary())
-    if room_metric.values:
-        print(room_metric.summary())
+    iou_metric.print()
+    rot_metric.print(auc_thr=[1, 5, 10, 20])
+    chamfer_metric.print()
+    wall_metric.print()
+    room_metric.print()

@@ -248,3 +248,47 @@ def flatten_multi_room(image_tuples: List, layouts_gt: Dict, layouts_pred: List)
             layouts_gt_new[f"{scene}:{room}"] = layout
 
     return image_tuples_new, layouts_gt_new, layouts_pred_new
+
+
+def merge_layouts(layouts: Dict) -> Dict:
+    """! Merge multi-room layouts into a single layout for each scene.
+
+    @param layouts The multi-room layouts.
+    @return The merged layouts.
+    """
+    layouts_per_scene = {}
+    for scene, layout in layouts.items():
+        scene = scene.split(":")[0]
+        if scene not in layouts_per_scene:
+            layouts_per_scene[scene] = []
+        layouts_per_scene[scene].append(layout)
+
+    layouts_merged = {}
+    for scene, layouts in layouts_per_scene.items():
+        faces, verts = [], []
+        vert_offset = 0
+        for layout in layouts:
+            mesh = layout_to_mesh(get_layout(layout))
+            faces.append(mrmeshnumpy.getNumpyFaces(mesh.topology) + vert_offset)
+            verts.append(mrmeshnumpy.getNumpyVerts(mesh))
+            vert_offset += len(verts[-1])
+        layouts_merged[scene] = {"faces": np.vstack(faces).tolist(), "verts": np.vstack(verts).tolist()}
+
+    return layouts_merged
+
+
+def remove_floor_ceiling(layouts: Dict, up: np.ndarray = np.array([0, 0, 1])) -> Dict:
+    """! Remove floor and ceiling faces from layouts.
+
+    @param layouts The layouts.
+    @return The layouts without floor and ceiling.
+    """
+    layouts_new = {}
+    for scene, layout in layouts.items():
+        mesh = layout_to_mesh(get_layout(layout))
+        faces = mrmeshnumpy.getNumpyFaces(mesh.topology)
+        verts = mrmeshnumpy.getNumpyVerts(mesh)
+        normals = np.array([[n.x, n.y, n.z] for n in mrmeshpy.computePerFaceNormals(mesh)])
+        mask = np.abs(normals @ up) < 0.5
+        layouts_new[scene] = {"faces": faces[mask].tolist(), "verts": verts.tolist()}
+    return layouts_new

@@ -50,7 +50,6 @@ if __name__ == "__main__":
 
     cache = dict()
     renderer = None
-    num_views_skipped, num_views_total = 0, 0
 
     for image_tuple, layouts_pred in tqdm.tqdm(list(zip(image_tuples, layout_preds_per_tuple))):
         scene = image_tuple["scene"]
@@ -84,18 +83,9 @@ if __name__ == "__main__":
             depth_rmse, normal_error = depth_normal_error(
                 layout_gt, layouts_pred[pred_idx], renderer, R, t, K, np.deg2rad(args.normal_angle_threshold), path
             )
-            if np.isnan(depth_rmse) or np.isnan(normal_error):
-                num_views_skipped += 1
-            else:
-                depth_metric.add(depth_rmse)
-                normal_metric.add(normal_error)
+            depth_metric.add(depth_rmse)
+            normal_metric.add(normal_error)
 
-        num_views_total += len(images)
-
-    print(depth_metric.summary())
-    print(normal_metric.summary())
-
-    if num_views_skipped > 0:
-        print(f"WARNING: Skipped {num_views_skipped} out of {num_views_total} views")
-
+    depth_metric.print()
+    normal_metric.print()
     del renderer
