@@ -77,13 +77,8 @@ if __name__ == "__main__":
                     wall_metric.add(recall)
                     room_metric.add(all(recall))
 
-    if iou_metric.values:
-        print(iou_metric.summary())
-    if rot_metric.values:
-        print(rot_metric.summary(auc_thr=[1, 5, 10, 20]))
-    if chamfer_metric.values:
-        print(chamfer_metric.summary())
-    if wall_metric.values:
-        print(wall_metric.summary())
-    if room_metric.values:
-        print(room_metric.summary())
+    iou_metric.print()
+    rot_metric.print(auc_thr=[1, 5, 10, 20])
+    chamfer_metric.print()
+    wall_metric.print()
+    room_metric.print()

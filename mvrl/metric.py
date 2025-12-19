@@ -88,3 +88,11 @@ class Metric:
         for thr in auc_thr:
             s += f"{BOLD}AUC@{thr:2d}{ENDC}: {self.auc(thr):.3f}\n"
         return s
+
+    def print(self, auc_thr: list = []) -> None:
+        """! Print summary.
+
+        @param auc_thr AUC thresholds.
+        """
+        if self.values:
+            print(self.summary(auc_thr))
