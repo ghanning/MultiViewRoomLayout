@@ -2,6 +2,10 @@ from typing import List, Union
 
 import numpy as np
 
+BOLD = "\033[1m"
+ENDC = "\033[0m"
+MAGENTA = "\033[35m"
+
 
 class Metric:
     """! Error metric class."""
@@ -75,12 +79,12 @@ class Metric:
         @param auc_thr AUC thresholds.
         @return The summary.
         """
-        s = f"### {self.name} ###\n"
-        s += f"Count : {len(self.values)}\n"
-        s += f"Min   : {self.min():.3f} {self.unit}\n"
-        s += f"Max   : {self.max():.3f} {self.unit}\n"
-        s += f"Mean  : {self.mean():.3f} {self.unit}\n"
-        s += f"Median: {self.median():.3f} {self.unit}\n"
+        s = f"{MAGENTA}{self.name}{ENDC}\n"
+        s += f"{BOLD}Count{ENDC} : {len(self.values)}\n"
+        s += f"{BOLD}Min{ENDC}   : {self.min():.3f} {self.unit}\n"
+        s += f"{BOLD}Max{ENDC}   : {self.max():.3f} {self.unit}\n"
+        s += f"{BOLD}Mean{ENDC}  : {self.mean():.3f} {self.unit}\n"
+        s += f"{BOLD}Median{ENDC}: {self.median():.3f} {self.unit}\n"
         for thr in auc_thr:
-            s += f"AUC@{thr:2d}: {self.auc(thr):.3f}\n"
+            s += f"{BOLD}AUC@{thr:2d}{ENDC}: {self.auc(thr):.3f}\n"
         return s
