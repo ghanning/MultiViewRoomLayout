@@ -8,7 +8,7 @@ import tqdm
 from .cuboid import Cuboid
 from .metric import Metric
 from .metrics import chamfer_distance, iou3d, rotation_error, wall_recall
-from .utils import DATASETS, dataset_dir, flatten_multi_room, get_layout
+from .utils import DATASETS, dataset_dir, flatten_multi_room, get_layout, merge_layouts
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate predicted layouts")
@@ -19,6 +19,7 @@ if __name__ == "__main__":
         "--metrics", "-m", nargs="+", default=["iou", "rotation", "chamfer", "recall"], help="Metrics to evaluate"
     )
     parser.add_argument("--use_best", "-ub", action="store_true", help="Use prediction with highest IoU for each scene")
+    parser.add_argument("--combine_rooms", "-cr", action="store_true", help="Combine multi-room ground truth layouts")
     args = parser.parse_args()
 
     with open(dataset_dir() / args.dataset / f"images_{args.split}.json") as f:
@@ -34,6 +35,8 @@ if __name__ == "__main__":
         image_tuples, layouts_gt, layout_preds_per_tuple = flatten_multi_room(
             image_tuples, layouts_gt, layout_preds_per_tuple
         )
+        if args.combine_rooms:
+            layouts_gt = merge_layouts(layouts_gt)
     assert len(layout_preds_per_tuple) == len(image_tuples)
 
     iou_metric = Metric("IoU")
@@ -45,6 +48,8 @@ if __name__ == "__main__":
 
     for image_tuple, layouts_pred in tqdm.tqdm(list(zip(image_tuples, layout_preds_per_tuple))):
         scene = image_tuple["scene"]
+        if args.combine_rooms:
+            scene = scene.split(":")[0]
         layout_gt = get_layout(layouts_gt[scene])
 
         if not isinstance(layouts_pred, list):
