@@ -288,6 +288,15 @@ If you use these datasets consider citing our work:
 Please also cite the original datasets:
 
 ```
+@inproceedings{avetisyan2024scenescript,
+  title={SceneScript: Reconstructing Scenes With An Autoregressive Structured Language Model},
+  author={Avetisyan, Armen and Xie, Christopher and Howard-Jenkins, Henry and Yang, Tsun-Yi and Aroudj, Samir and Patra, Suvam and Zhang, Fuyang and Frost, Duncan and Holland, Luke and Orme, Campbell and Engel, Jakob and Miller, Edward and Newcombe, Richard and Balntas, Vasileios},
+  booktitle={European Conference on Computer Vision (ECCV)},
+  year={2024},
+}
+```
+
+```
 @inproceedings{yeshwanthliu2023scannetpp,
   title={ScanNet++: A High-Fidelity Dataset of 3D Indoor Scenes},
   author={Yeshwanth, Chandan and Liu, Yueh-Cheng and Nie{\ss}ner, Matthias and Dai, Angela},
