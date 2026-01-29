@@ -44,19 +44,18 @@ if __name__ == "__main__":
     renderer = None
 
     for image_tuple, layouts_pred in tqdm.tqdm(list(zip(image_tuples, layout_preds_per_tuple))):
-        scene = image_tuple["scene"]
-        layout_gt = get_layout(layouts_gt[scene])
-
-        images, image_size = get_images(args.dataset, args.root_dir, image_tuple, cache, args.num_images)
+        layout_gt = get_layout(layouts_gt[image_tuple["scene"]])
+        images = get_images(args.dataset, args.root_dir, image_tuple, cache, args.num_images)
 
         if not isinstance(layouts_pred, list):
             layouts_pred = [layouts_pred]
         layouts_pred = [get_layout(p, args.pred.parent) for p in layouts_pred]
 
+        image_size = (images[0].width, images[0].height)
         if renderer is None or renderer.fbo.size != image_size:
             renderer = Renderer(image_size)
 
-        for image_idx, (R, t, K, path) in enumerate(images):
+        for image_idx, image in enumerate(images):
             if len(layouts_pred) == 1:  # Single prediction
                 pred_idx = 0
             elif len(layouts_pred) == len(images):  # One prediction per perspective image
@@ -65,7 +64,7 @@ if __name__ == "__main__":
                 assert args.dataset == "2d3ds"
                 pred_idx = image_idx // (len(images) // len(image_tuple["images"]))
             depth_rmse, normal_error = depth_normal_error(
-                layout_gt, layouts_pred[pred_idx], renderer, R, t, K, np.deg2rad(args.normal_angle_threshold), path
+                layout_gt, layouts_pred[pred_idx], renderer, image, np.deg2rad(args.normal_angle_threshold)
             )
             depth_metric.add(depth_rmse)
             normal_metric.add(normal_error)

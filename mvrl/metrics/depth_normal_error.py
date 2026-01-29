@@ -1,5 +1,4 @@
-from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Tuple, Union
 
 import moderngl
 import numpy as np
@@ -7,6 +6,7 @@ from meshlib import mrmeshnumpy, mrmeshpy
 
 from ..cuboid import Cuboid
 from ..renderer import Renderer
+from ..utils import Image
 
 
 def perspective_projection(
@@ -70,34 +70,28 @@ def depth_normal_error(
     layout1: Union[Cuboid, mrmeshpy.Mesh],
     layout2: Union[Cuboid, mrmeshpy.Mesh],
     renderer: Renderer,
-    R: np.ndarray,
-    t: np.ndarray,
-    K: np.ndarray,
+    image: Image,
     normal_angle_thr: float,
-    image_path: Optional[Path] = None,
 ) -> Tuple[float, float]:
     """! Compute depth and normal errors.
 
     @param layout1, layout2 The ground truth and predicted layout.
     @param renderer Renderer.
-    @param R The world-to-camera rotation matrix (3, 3).
-    @param t The world-to-camera translation vector (3).
-    @param K The camera intrinsics (3, 3).
+    @param image The image containing camera parameters.
     @param normal_angle_thr Normal angle threshold in radians.
-    @param image_path Image path (for debugging purposes).
     @return The depth RMSE and the normal angle error (ratio of pixels with normal angle error < normal_angle_thr).
     """
     if any(isinstance(x, mrmeshpy.Mesh) and x.topology.numValidFaces() == 0 for x in (layout1, layout2)):
         return np.nan, np.nan
 
     world_to_camera = np.eye(4)
-    world_to_camera[:3, :3] = R
-    world_to_camera[:3, 3] = t
+    world_to_camera[:3, :3] = image.R
+    world_to_camera[:3, 3] = image.t
     opencv_to_opengl = np.eye(4)
     opencv_to_opengl[1, 1] = opencv_to_opengl[2, 2] = -1
     world_to_view = opencv_to_opengl @ world_to_camera
 
-    fx, fy, cx, cy = K[0, 0], K[1, 1], K[0, 2], K[1, 2]
+    fx, fy, cx, cy = image.K[0, 0], image.K[1, 1], image.K[0, 2], image.K[1, 2]
     width, height = renderer.fbo.size
     znear, zfar = 0.01, 1000.0
     view_to_clip = perspective_projection(fx, fy, cx, cy, width, height, znear=znear, zfar=zfar)
@@ -124,15 +118,15 @@ def depth_normal_error(
         rr.init("depth_normal_error", spawn=True)
         visualize_layout("layout1", layout1, color=[246, 205, 97, 128])
         visualize_layout("layout2", layout2, color=[14, 154, 167, 128])
-        visualize_camera("camera", R, t, K, depth1.shape[1], depth1.shape[0])
+        visualize_camera("camera", image.R, image.t, image.K, depth1.shape[1], depth1.shape[0])
         depth1[np.isclose(depth1, zfar)] = 0.0
         depth2[np.isclose(depth2, zfar)] = 0.0
         rr.log("camera/depth", rr.DepthImage(depth1))
         rr.log("camera/depth2", rr.DepthImage(depth2))
         rr.log("camera/normals1", rr.Image(normals1))
         rr.log("camera/normals2", rr.Image(normals2))
-        if image_path:
-            rr.log("camera/image", rr.EncodedImage(path=image_path))
+        if image.path:
+            rr.log("camera/image", rr.EncodedImage(path=image.path))
         breakpoint()
 
     return depth_rmse, normal_error
