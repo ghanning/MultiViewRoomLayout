@@ -8,15 +8,7 @@ import tqdm
 from .metric import Metric
 from .metrics import depth_normal_error
 from .renderer import Renderer
-from .utils import (
-    DATASETS,
-    dataset_dir,
-    flatten_multi_room,
-    get_images_2d3ds,
-    get_images_ase,
-    get_images_scannetpp,
-    get_layout,
-)
+from .utils import DATASETS, dataset_dir, flatten_multi_room, get_images, get_layout
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate predicted layouts (pixel-wise metrics)")
@@ -54,16 +46,8 @@ if __name__ == "__main__":
     for image_tuple, layouts_pred in tqdm.tqdm(list(zip(image_tuples, layout_preds_per_tuple))):
         scene = image_tuple["scene"]
         layout_gt = get_layout(layouts_gt[scene])
-        scene = scene.split(":")[0]
 
-        if args.dataset == "scannetpp":
-            images, image_size = get_images_scannetpp(
-                args.root_dir, scene, image_tuple["images"][: args.num_images], cache
-            )
-        elif args.dataset == "2d3ds":
-            images, image_size = get_images_2d3ds(args.root_dir, scene, image_tuple["perspective_images"])
-        else:  # ase
-            images, image_size = get_images_ase(args.root_dir, scene, image_tuple["images"][: args.num_images], cache)
+        images, image_size = get_images(args.dataset, args.root_dir, image_tuple, cache, args.num_images)
 
         if not isinstance(layouts_pred, list):
             layouts_pred = [layouts_pred]

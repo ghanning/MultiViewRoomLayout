@@ -211,6 +211,33 @@ def get_images_ase(
     return images, image_size
 
 
+def get_images(
+    dataset: str, root_dir: Path, image_tuple: Dict, cache: Optional[Dict] = None, num_images: Optional[int] = None
+) -> Tuple[List[Tuple], Tuple[int, int]]:
+    """! Get camera parameters and image paths.
+
+    @param dataset Dataset name.
+    @param root_dir Path to dataset root directory.
+    @param image_tuple Image tuple.
+    @param cache Cache.
+    @param num_images Number of images to use (if applicable).
+    @return A list of (R, t, K, path) tuples and the image size.
+    """
+    scene = image_tuple["scene"]
+    scene = scene.split(":")[0]  # For multi-room datasets
+
+    if dataset == "scannetpp":
+        images, image_size = get_images_scannetpp(root_dir, scene, image_tuple["images"][:num_images], cache)
+    elif dataset == "2d3ds":
+        images, image_size = get_images_2d3ds(root_dir, scene, image_tuple["perspective_images"])
+    elif dataset == "ase":
+        images, image_size = get_images_ase(root_dir, scene, image_tuple["images"][:num_images], cache)
+    else:
+        raise NotImplementedError(f"Dataset {dataset} not supported")
+
+    return images, image_size
+
+
 def chunk(sequence: Iterable, size: int) -> Generator[Iterable, None, None]:
     """! Split a sequence into chunks.
 
