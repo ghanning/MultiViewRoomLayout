@@ -245,7 +245,7 @@ def chunk(sequence: Iterable, size: int) -> Generator[Iterable, None, None]:
     return (sequence[idx : idx + size] for idx in range(0, len(sequence), size))
 
 
-def flatten_multi_room(image_tuples: List, layouts_gt: Dict, layouts_pred: List) -> Tuple[List, Dict, List]:
+def flatten_multi_room(image_tuples: List, layouts_gt: Optional[Dict], layouts_pred: List) -> Tuple[List, Dict, List]:
     """! Flatten a multi-room dataset.
 
     @param image_tuples The image tuples.
@@ -253,7 +253,7 @@ def flatten_multi_room(image_tuples: List, layouts_gt: Dict, layouts_pred: List)
     @param layouts_pred Predicted layouts.
     @return The split dataset.
     """
-    image_tuples_new, layouts_gt_new = [], {}
+    image_tuples_new = []
     split_pred = len(layouts_pred) == len(image_tuples)
     layouts_pred_new = [] if split_pred else layouts_pred
 
@@ -270,9 +270,13 @@ def flatten_multi_room(image_tuples: List, layouts_gt: Dict, layouts_pred: List)
             if split_pred:
                 layouts_pred_new.append(layouts_pred[idx][room])
 
-    for scene, layouts in layouts_gt.items():
-        for room, layout in layouts.items():
-            layouts_gt_new[f"{scene}:{room}"] = layout
+    if layouts_gt is not None:
+        layouts_gt_new = {}
+        for scene, layouts in layouts_gt.items():
+            for room, layout in layouts.items():
+                layouts_gt_new[f"{scene}:{room}"] = layout
+    else:
+        layouts_gt_new = None
 
     return image_tuples_new, layouts_gt_new, layouts_pred_new
 
