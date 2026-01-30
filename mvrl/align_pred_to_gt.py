@@ -64,6 +64,7 @@ if __name__ == "__main__":
     parser.add_argument("--output_pred", "-op", type=Path, required=True, help="Path to file with output predictions")
     parser.add_argument("--dataset", "-d", required=True, choices=DATASETS, help="Dataset")
     parser.add_argument("--split", "-s", required=True, help="Data split ('train', 'val', 'test' etc.)")
+    parser.add_argument("--max_error", "-me", type=float, help="Maximum alignment error (m)")
     args = parser.parse_args()
 
     with open(dataset_dir() / args.dataset / f"images_{args.split}.json") as f:
@@ -99,6 +100,8 @@ if __name__ == "__main__":
         tgt_locations = np.stack([-img.R.T @ img.t for img in images_gt])
         min_common_images = 3
         ransac_options = pycolmap.RANSACOptions()
+        if args.max_error is not None:
+            ransac_options.max_error = args.max_error
         transform = pycolmap.align_reconstruction_to_locations(
             reconstruction_pred, tgt_image_names, tgt_locations, min_common_images, ransac_options
         )
