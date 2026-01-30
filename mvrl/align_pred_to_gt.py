@@ -102,6 +102,8 @@ if __name__ == "__main__":
         transform = pycolmap.align_reconstruction_to_locations(
             reconstruction_pred, tgt_image_names, tgt_locations, min_common_images, ransac_options
         )
+        if transform is None:
+            raise RuntimeError("Alignment failed")
 
         pred_locations = np.stack([-img.R.T @ img.t for img in images_pred])
         aligned_locations = transform * pred_locations
