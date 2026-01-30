@@ -64,7 +64,7 @@ if __name__ == "__main__":
     parser.add_argument("--output_pred", "-op", type=Path, required=True, help="Path to file with output predictions")
     parser.add_argument("--dataset", "-d", required=True, choices=DATASETS, help="Dataset")
     parser.add_argument("--split", "-s", required=True, help="Data split ('train', 'val', 'test' etc.)")
-    parser.add_argument("--max_error", "-me", type=float, help="Maximum alignment error (m)")
+    parser.add_argument("--max_error", "-me", type=float, help="Maximum RANSAC error (m)")
     args = parser.parse_args()
 
     with open(dataset_dir() / args.dataset / f"images_{args.split}.json") as f:

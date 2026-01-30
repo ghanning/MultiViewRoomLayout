@@ -134,7 +134,7 @@ If your predictions are based only on a subset of the images in each tuple (e.g.
 If your room layout estimation method also predicts the camera poses (i.e. does not use the ground truth poses) then the following script can be used to align the layout predictions to the ground truth coordinate system before running the evaluation:
 
 ```bash
-python -m mvrl.align_pred_to_gt --root_dir ROOT_DIR --input_pred INPUT_PRED --output_pred OUTPUT_PRED --dataset {scannetpp,ase,2d3ds} --split SPLIT
+python -m mvrl.align_pred_to_gt --root_dir ROOT_DIR --input_pred INPUT_PRED --output_pred OUTPUT_PRED --dataset {scannetpp,ase,2d3ds} --split SPLIT [--max_error MAX_ERROR]
 ```
 
 The predicted camera poses should be included in the input layout prediction file as a list where each item has the keys "R" and "t" (world-to-camera transformation).
