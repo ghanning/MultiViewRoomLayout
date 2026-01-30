@@ -8,15 +8,7 @@ import tqdm
 from .metric import Metric
 from .metrics import depth_normal_error
 from .renderer import Renderer
-from .utils import (
-    DATASETS,
-    dataset_dir,
-    flatten_multi_room,
-    get_images_2d3ds,
-    get_images_ase,
-    get_images_scannetpp,
-    get_layout,
-)
+from .utils import DATASETS, dataset_dir, flatten_multi_room, get_images, get_layout
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate predicted layouts (pixel-wise metrics)")
@@ -52,27 +44,18 @@ if __name__ == "__main__":
     renderer = None
 
     for image_tuple, layouts_pred in tqdm.tqdm(list(zip(image_tuples, layout_preds_per_tuple))):
-        scene = image_tuple["scene"]
-        layout_gt = get_layout(layouts_gt[scene])
-        scene = scene.split(":")[0]
-
-        if args.dataset == "scannetpp":
-            images, image_size = get_images_scannetpp(
-                args.root_dir, scene, image_tuple["images"][: args.num_images], cache
-            )
-        elif args.dataset == "2d3ds":
-            images, image_size = get_images_2d3ds(args.root_dir, scene, image_tuple["perspective_images"])
-        else:  # ase
-            images, image_size = get_images_ase(args.root_dir, scene, image_tuple["images"][: args.num_images], cache)
+        layout_gt = get_layout(layouts_gt[image_tuple["scene"]])
+        images = get_images(args.dataset, args.root_dir, image_tuple, cache, args.num_images)
 
         if not isinstance(layouts_pred, list):
             layouts_pred = [layouts_pred]
         layouts_pred = [get_layout(p, args.pred.parent) for p in layouts_pred]
 
+        image_size = (images[0].width, images[0].height)  # Assume all images have the same size
         if renderer is None or renderer.fbo.size != image_size:
             renderer = Renderer(image_size)
 
-        for image_idx, (R, t, K, path) in enumerate(images):
+        for image_idx, image in enumerate(images):
             if len(layouts_pred) == 1:  # Single prediction
                 pred_idx = 0
             elif len(layouts_pred) == len(images):  # One prediction per perspective image
@@ -81,7 +64,7 @@ if __name__ == "__main__":
                 assert args.dataset == "2d3ds"
                 pred_idx = image_idx // (len(images) // len(image_tuple["images"]))
             depth_rmse, normal_error = depth_normal_error(
-                layout_gt, layouts_pred[pred_idx], renderer, R, t, K, np.deg2rad(args.normal_angle_threshold), path
+                layout_gt, layouts_pred[pred_idx], renderer, image, np.deg2rad(args.normal_angle_threshold)
             )
             depth_metric.add(depth_rmse)
             normal_metric.add(normal_error)

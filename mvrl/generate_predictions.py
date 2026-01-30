@@ -1,13 +1,13 @@
 import argparse
 import json
 from pathlib import Path
-from typing import List, Tuple
+from typing import List
 
 import numpy as np
 from meshlib import mrmeshnumpy, mrmeshpy
 
 from .cuboid import Cuboid
-from .utils import chunk, dataset_dir, get_images_2d3ds, get_images_scannetpp
+from .utils import Image, chunk, dataset_dir, get_images_2d3ds, get_images_scannetpp
 
 
 def orthogonal_vector(x: np.ndarray) -> np.ndarray:
@@ -37,7 +37,7 @@ def random_rotation() -> np.ndarray:
     return np.c_[x, y, z]
 
 
-def make_prediction(images: List[Tuple], margin: float = 1.0) -> Cuboid:
+def make_prediction(images: List[Image], margin: float = 1.0) -> Cuboid:
     """! Predict cuboid room layout.
 
     @param images Input images.
@@ -45,7 +45,7 @@ def make_prediction(images: List[Tuple], margin: float = 1.0) -> Cuboid:
     @return The predicted cuboid.
     """
     R = random_rotation()
-    c = np.stack([-Ri.T @ ti for Ri, ti, _, _ in images]) @ R.T
+    c = np.stack([-i.R.T @ i.t for i in images]) @ R.T
     t = -(np.min(c, axis=0) + np.max(c, axis=0)) / 2.0
     s = 2.0 * np.max(np.abs(c + t) + margin, axis=0)
     return Cuboid(R, t, s)
@@ -77,12 +77,12 @@ if __name__ == "__main__":
         scene = image_tuple["scene"]
 
         if args.dataset == "scannetpp":
-            images, _ = get_images_scannetpp(
+            images = get_images_scannetpp(
                 args.root_dir, scene, image_tuple["images"][: args.num_images], transforms_cache
             )
             assert args.num_pred in (1, len(images))
         else:
-            images, _ = get_images_2d3ds(args.root_dir, scene, image_tuple["perspective_images"])
+            images = get_images_2d3ds(args.root_dir, scene, image_tuple["perspective_images"])
             assert args.num_pred in (1, 2, len(images))
 
         preds_tuple = list()

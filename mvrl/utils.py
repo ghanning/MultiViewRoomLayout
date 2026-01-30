@@ -1,4 +1,5 @@
 import json
+from collections import namedtuple
 from pathlib import Path
 from typing import Dict, Generator, Iterable, List, Optional, Tuple, Union
 
@@ -9,6 +10,8 @@ from projectaria_tools.projects import ase
 from .cuboid import Cuboid
 
 DATASETS = {"scannetpp", "2d3ds", "ase"}
+
+Image = namedtuple("Image", ["R", "t", "K", "width", "height", "path"])
 
 
 def dataset_dir() -> Path:
@@ -132,16 +135,14 @@ def get_pose_scannetpp(transforms: Dict, image: str) -> Tuple[np.ndarray, np.nda
     return R, t, K
 
 
-def get_images_scannetpp(
-    root_dir: Path, scene: str, image_names: List[str], cache: Dict
-) -> Tuple[List[Tuple], Tuple[int, int]]:
+def get_images_scannetpp(root_dir: Path, scene: str, image_names: List[str], cache: Dict) -> List[Image]:
     """! Get camera parameters and image paths for ScanNet++.
 
     @param root_dir Path to ScanNet++ v2 root directory.
     @param scene Scene name.
     @param image_names Image names.
     @param cache Cached transforms data.
-    @return A list of (R, t, K, path) tuples and the image size.
+    @return A list of Image namedtuples.
     """
     dslr_dir = root_dir / "data" / scene / "dslr"
     transforms = read_nerfstudio_transforms(cache, dslr_dir / "nerfstudio" / "transforms_undistorted.json")
@@ -149,18 +150,17 @@ def get_images_scannetpp(
     for name in image_names:
         R, t, K = get_pose_scannetpp(transforms, name)
         image_path = dslr_dir / "undistorted_images" / name
-        images.append((R, t, K, image_path))
-    image_size = (transforms["w"], transforms["h"])
-    return images, image_size
+        images.append(Image(R, t, K, transforms["w"], transforms["h"], image_path))
+    return images
 
 
-def get_images_2d3ds(root_dir: Path, scene: str, image_names: List[str]) -> Tuple[List[Tuple], Tuple[int, int]]:
+def get_images_2d3ds(root_dir: Path, scene: str, image_names: List[str]) -> List[Image]:
     """! Get camera parameters and image paths for 2D-3D-Semantics.
 
     @param root_dir Path to 2D-3D-Semantics root directory.
     @param scene Scene name.
     @param image_names Image names.
-    @return A list of (R, t, K, path) tuples and the image size.
+    @return A list of Image namedtuples.
     """
     area = scene.split(":")[0]
     persp_dir = root_dir / area / "persp"
@@ -169,20 +169,18 @@ def get_images_2d3ds(root_dir: Path, scene: str, image_names: List[str]) -> Tupl
         pose_path = persp_dir / "pose" / Path(name.replace("rgb", "pose")).with_suffix(".json")
         R, t, K, image_size = read_pose_2d3ds(pose_path)
         image_path = persp_dir / "rgb" / name
-        images.append((R, t, K, image_path))
-    return images, image_size
+        images.append(Image(R, t, K, image_size[0], image_size[1], image_path))
+    return images
 
 
-def get_images_ase(
-    root_dir: Path, scene: str, image_names: List[str], cache: Dict
-) -> Tuple[List[Tuple], Tuple[int, int]]:
+def get_images_ase(root_dir: Path, scene: str, image_names: List[str], cache: Dict) -> List[Image]:
     """! Get camera parameters and image paths for Aria Synthetic Environments.
 
     @param root_dir Path to Aria Synthetic Environments root directory.
     @param scene Scene name.
     @param image_names Image names.
     @param cache Cached trajectory data.
-    @return A list of (R, t, K, path) tuples and the image size.
+    @return A list of Image namedtuples.
     """
     scene_dir = root_dir / scene
 
@@ -190,7 +188,6 @@ def get_images_ase(
         camera = json.load(f)
     fx, fy, cx, cy = camera["params"]
     K = Kmatrix(fx, fy, cx, cy)
-    image_size = camera["width"], camera["height"]
 
     trajectory_path = scene_dir / "trajectory.csv"
     if trajectory_path not in cache:
@@ -205,10 +202,37 @@ def get_images_ase(
         idx = int(name[8:15])  # "vignette0000043.jpg"
         T_w2d = trajectory[idx].inverse()
         T_w2c = T_d2c @ T_w2d
-        R, t = T_w2c.rotation().to_matrix(), T_w2c.translation()
+        R, t = T_w2c.rotation().to_matrix(), T_w2c.translation().squeeze(0)
         image_path = scene_dir / "rgb_undistorted" / name
-        images.append((R, t, K, image_path))
-    return images, image_size
+        images.append(Image(R, t, K, camera["width"], camera["height"], image_path))
+    return images
+
+
+def get_images(
+    dataset: str, root_dir: Path, image_tuple: Dict, cache: Optional[Dict] = None, num_images: Optional[int] = None
+) -> List[Image]:
+    """! Get camera parameters and image paths.
+
+    @param dataset Dataset name.
+    @param root_dir Path to dataset root directory.
+    @param image_tuple Image tuple.
+    @param cache Cache.
+    @param num_images Number of images to use (if applicable).
+    @return A list of Image namedtuples.
+    """
+    scene = image_tuple["scene"]
+    scene = scene.split(":")[0]  # For multi-room datasets
+
+    if dataset == "scannetpp":
+        images = get_images_scannetpp(root_dir, scene, image_tuple["images"][:num_images], cache)
+    elif dataset == "2d3ds":
+        images = get_images_2d3ds(root_dir, scene, image_tuple["perspective_images"])
+    elif dataset == "ase":
+        images = get_images_ase(root_dir, scene, image_tuple["images"][:num_images], cache)
+    else:
+        raise NotImplementedError(f"Dataset {dataset} not supported")
+
+    return images
 
 
 def chunk(sequence: Iterable, size: int) -> Generator[Iterable, None, None]:
@@ -221,7 +245,7 @@ def chunk(sequence: Iterable, size: int) -> Generator[Iterable, None, None]:
     return (sequence[idx : idx + size] for idx in range(0, len(sequence), size))
 
 
-def flatten_multi_room(image_tuples: List, layouts_gt: Dict, layouts_pred: List) -> Tuple[List, Dict, List]:
+def flatten_multi_room(image_tuples: List, layouts_gt: Optional[Dict], layouts_pred: List) -> Tuple[List, Dict, List]:
     """! Flatten a multi-room dataset.
 
     @param image_tuples The image tuples.
@@ -229,7 +253,7 @@ def flatten_multi_room(image_tuples: List, layouts_gt: Dict, layouts_pred: List)
     @param layouts_pred Predicted layouts.
     @return The split dataset.
     """
-    image_tuples_new, layouts_gt_new = [], {}
+    image_tuples_new = []
     split_pred = len(layouts_pred) == len(image_tuples)
     layouts_pred_new = [] if split_pred else layouts_pred
 
@@ -246,9 +270,13 @@ def flatten_multi_room(image_tuples: List, layouts_gt: Dict, layouts_pred: List)
             if split_pred:
                 layouts_pred_new.append(layouts_pred[idx][room])
 
-    for scene, layouts in layouts_gt.items():
-        for room, layout in layouts.items():
-            layouts_gt_new[f"{scene}:{room}"] = layout
+    if layouts_gt is not None:
+        layouts_gt_new = {}
+        for scene, layouts in layouts_gt.items():
+            for room, layout in layouts.items():
+                layouts_gt_new[f"{scene}:{room}"] = layout
+    else:
+        layouts_gt_new = None
 
     return image_tuples_new, layouts_gt_new, layouts_pred_new
 

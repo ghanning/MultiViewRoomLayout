@@ -129,6 +129,16 @@ If your predictions are based only on a subset of the images in each tuple (e.g.
 
 **Note**: The script assumes that the ScanNet++ DSLR images have been undistorted, which can be done by the [ScanNet++ Toolbox](https://github.com/scannetpp/scannetpp?tab=readme-ov-file#undistortion-convert-fisheye-images-to-pinhole-with-opencv).
 
+### Predicted camera poses
+
+If your room layout estimation method also predicts the camera poses (i.e. does not use the ground truth poses) then the following script can be used to align the layout predictions to the ground truth coordinate system before running the evaluation:
+
+```bash
+python -m mvrl.align_pred_to_gt --root_dir ROOT_DIR --input_pred INPUT_PRED --output_pred OUTPUT_PRED --dataset {scannetpp,ase,2d3ds} --split SPLIT [--max_error MAX_ERROR]
+```
+
+The predicted camera poses should be included in the input layout prediction file as a list where each item has the keys "R" and "t" (world-to-camera transformation).
+
 ## Creating the datasets
 
 Below we document the steps taken to create the training, validation and test splits of ScanNet++ and the 2D-3D-Semantics dataset. To run this code some additional dependencies are needed:
