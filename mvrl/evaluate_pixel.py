@@ -51,7 +51,7 @@ if __name__ == "__main__":
             layouts_pred = [layouts_pred]
         layouts_pred = [get_layout(p, args.pred.parent) for p in layouts_pred]
 
-        image_size = (images[0].width, images[0].height)
+        image_size = (images[0].width, images[0].height)  # Assume all images have the same size
         if renderer is None or renderer.fbo.size != image_size:
             renderer = Renderer(image_size)
 

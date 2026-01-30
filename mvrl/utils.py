@@ -202,7 +202,7 @@ def get_images_ase(root_dir: Path, scene: str, image_names: List[str], cache: Di
         idx = int(name[8:15])  # "vignette0000043.jpg"
         T_w2d = trajectory[idx].inverse()
         T_w2c = T_d2c @ T_w2d
-        R, t = T_w2c.rotation().to_matrix(), T_w2c.translation()
+        R, t = T_w2c.rotation().to_matrix(), T_w2c.translation().squeeze(0)
         image_path = scene_dir / "rgb_undistorted" / name
         images.append(Image(R, t, K, camera["width"], camera["height"], image_path))
     return images
