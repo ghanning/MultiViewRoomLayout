@@ -272,7 +272,10 @@ def flatten_multi_room(image_tuples: List, layouts_gt: Optional[Dict], layouts_p
                 new_tuple["perspective_images"] = image_tuple["perspective_images"][room]
             image_tuples_new.append(new_tuple)
             if split_pred:
-                layouts_pred_new.append(layouts_pred[idx][room])
+                if room in layouts_pred[idx]:
+                    layouts_pred_new.append(layouts_pred[idx][room])
+                else:  # Single prediction, duplicate for each room
+                    layouts_pred_new.append(layouts_pred[idx])
 
     if layouts_gt is not None:
         layouts_gt_new = {}
