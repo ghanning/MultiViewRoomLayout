@@ -29,10 +29,13 @@ def get_layout(input: Union[Dict, str], base_dir: Optional[Path] = None) -> Unio
         - A dictionary with cuboid parameters (R, t, s).
         - A dictionary with "faces" and "verts" keys for a triangle mesh.
         - A string path to a mesh file.
+        - A multi-room layout dictionary containing multiple layouts in the above formats.
     @param base_dir Base directory for relative mesh path.
     @return The cuboid or triangle mesh layout.
     """
     if isinstance(input, dict):
+        if all(isinstance(v, dict) for v in input.values()):  # Multi-room layout
+            return get_layout(merge_layout(input))
         if "R" in input and "t" in input and "s" in input:
             layout = Cuboid.from_dict(input)
         elif "faces" in input and "verts" in input:
@@ -281,31 +284,21 @@ def flatten_multi_room(image_tuples: List, layouts_gt: Optional[Dict], layouts_p
     return image_tuples_new, layouts_gt_new, layouts_pred_new
 
 
-def merge_layouts(layouts: Dict) -> Dict:
-    """! Merge multi-room layouts into a single layout for each scene.
+def merge_layout(layout: Dict) -> Dict:
+    """! Merge multi-room layout into a single layout.
 
-    @param layouts The multi-room layouts.
-    @return The merged layouts.
+    @param layout The multi-room layout.
+    @return The merged layout.
     """
-    layouts_per_scene = {}
-    for scene, layout in layouts.items():
-        scene = scene.split(":")[0]
-        if scene not in layouts_per_scene:
-            layouts_per_scene[scene] = []
-        layouts_per_scene[scene].append(layout)
-
-    layouts_merged = {}
-    for scene, layouts in layouts_per_scene.items():
-        faces, verts = [], []
-        vert_offset = 0
-        for layout in layouts:
-            mesh = layout_to_mesh(get_layout(layout))
-            faces.append(mrmeshnumpy.getNumpyFaces(mesh.topology) + vert_offset)
-            verts.append(mrmeshnumpy.getNumpyVerts(mesh))
-            vert_offset += len(verts[-1])
-        layouts_merged[scene] = {"faces": np.vstack(faces).tolist(), "verts": np.vstack(verts).tolist()}
-
-    return layouts_merged
+    faces, verts = [], []
+    vert_offset = 0
+    for l in layout.values():
+        mesh = layout_to_mesh(get_layout(l))
+        faces.append(mrmeshnumpy.getNumpyFaces(mesh.topology) + vert_offset)
+        verts.append(mrmeshnumpy.getNumpyVerts(mesh))
+        vert_offset += len(verts[-1])
+    layout_merged = {"faces": np.vstack(faces).tolist(), "verts": np.vstack(verts).tolist()}
+    return layout_merged
 
 
 def remove_floor_ceiling(layouts: Dict, up: np.ndarray = np.array([0, 0, 1])) -> Dict:

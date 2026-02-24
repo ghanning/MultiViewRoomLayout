@@ -13,7 +13,6 @@ from .utils import (
     dataset_dir,
     flatten_multi_room,
     get_layout,
-    merge_layouts,
     remove_floor_ceiling,
 )
 
@@ -26,7 +25,7 @@ if __name__ == "__main__":
         "--metrics", "-m", nargs="+", default=["iou", "rotation", "chamfer", "recall"], help="Metrics to evaluate"
     )
     parser.add_argument("--use_best", "-ub", action="store_true", help="Use prediction with highest IoU for each scene")
-    parser.add_argument("--combine_rooms", "-cr", action="store_true", help="Combine multi-room ground truth layouts")
+    parser.add_argument("--no_flat", "-nf", action="store_true", help="Do not flatten multi-room layouts")
     parser.add_argument(
         "--only_walls", "-ow", action="store_true", help="Remove floor and ceiling from ground truth layouts"
     )
@@ -41,12 +40,10 @@ if __name__ == "__main__":
     with open(args.pred) as f:
         layout_preds_per_tuple = json.load(f)
 
-    if args.dataset == "ase" or args.split == "multi_room":
+    if (args.dataset == "ase" or args.split == "multi_room") and not args.no_flat:
         image_tuples, layouts_gt, layout_preds_per_tuple = flatten_multi_room(
             image_tuples, layouts_gt, layout_preds_per_tuple
         )
-        if args.combine_rooms:
-            layouts_gt = merge_layouts(layouts_gt)
     assert len(layout_preds_per_tuple) == len(image_tuples)
 
     if args.only_walls:
@@ -61,8 +58,6 @@ if __name__ == "__main__":
 
     for image_tuple, layouts_pred in tqdm.tqdm(list(zip(image_tuples, layout_preds_per_tuple))):
         scene = image_tuple["scene"]
-        if args.combine_rooms:
-            scene = scene.split(":")[0]
         layout_gt = get_layout(layouts_gt[scene])
 
         if not isinstance(layouts_pred, list):
