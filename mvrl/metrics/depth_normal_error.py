@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import Tuple
 
 import moderngl
 import numpy as np
@@ -6,7 +6,7 @@ from meshlib import mrmeshnumpy, mrmeshpy
 
 from ..cuboid import Cuboid
 from ..renderer import Renderer
-from ..utils import Image
+from ..utils import Image, Layout
 
 
 def perspective_projection(
@@ -34,7 +34,7 @@ def perspective_projection(
 
 
 def render_layout(
-    layout: Union[Cuboid, mrmeshpy.Mesh],
+    layout: Layout,
     renderer: Renderer,
     world_to_view: np.ndarray,
     view_to_clip: np.ndarray,
@@ -67,8 +67,8 @@ def render_layout(
 
 
 def depth_normal_error(
-    layout1: Union[Cuboid, mrmeshpy.Mesh],
-    layout2: Union[Cuboid, mrmeshpy.Mesh],
+    layout1: Layout,
+    layout2: Layout,
     renderer: Renderer,
     image: Image,
     normal_angle_thr: float,

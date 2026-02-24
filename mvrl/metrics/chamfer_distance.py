@@ -1,13 +1,14 @@
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 import open3d
 from meshlib import mrmeshnumpy, mrmeshpy
 
 from ..cuboid import Cuboid
+from ..utils import Layout
 
 
-def layout_to_open3d_mesh(layout: Union[Cuboid, mrmeshpy.Mesh]) -> open3d.t.geometry.TriangleMesh:
+def layout_to_open3d_mesh(layout: Layout) -> open3d.t.geometry.TriangleMesh:
     """! Convert layout to Open3D mesh.
 
     @param layout The layout.
@@ -20,9 +21,7 @@ def layout_to_open3d_mesh(layout: Union[Cuboid, mrmeshpy.Mesh]) -> open3d.t.geom
     return open3d.t.geometry.TriangleMesh(open3d.core.Tensor(verts.astype(np.float32)), open3d.core.Tensor(faces))
 
 
-def chamfer_distance(
-    layout1: Union[Cuboid, mrmeshpy.Mesh], layout2: Union[Cuboid, mrmeshpy.Mesh], seed: Optional[int] = None
-) -> float:
+def chamfer_distance(layout1: Layout, layout2: Layout, seed: Optional[int] = None) -> float:
     """! Compute the Chamfer distance between two room layouts.
 
     @param layout1, layout2 The layouts (either cuboids or triangle meshes).

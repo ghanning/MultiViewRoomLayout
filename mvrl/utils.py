@@ -12,6 +12,7 @@ from .cuboid import Cuboid
 DATASETS = {"scannetpp", "2d3ds", "ase"}
 
 Image = namedtuple("Image", ["R", "t", "K", "width", "height", "path"])
+Layout = Union[Cuboid, mrmeshpy.Mesh]
 
 
 def dataset_dir() -> Path:
@@ -22,7 +23,7 @@ def dataset_dir() -> Path:
     return Path(__file__).parent.parent / "dataset"
 
 
-def get_layout(input: Union[Dict, str], base_dir: Optional[Path] = None) -> Union[Cuboid, mrmeshpy.Mesh]:
+def get_layout(input: Union[Dict, str], base_dir: Optional[Path] = None) -> Layout:
     """! Get room layout.
 
     @param input One of the following:
@@ -54,7 +55,7 @@ def get_layout(input: Union[Dict, str], base_dir: Optional[Path] = None) -> Unio
     return layout
 
 
-def layout_to_mesh(layout: Union[Cuboid, mrmeshpy.Mesh]) -> mrmeshpy.Mesh:
+def layout_to_mesh(layout: Layout) -> mrmeshpy.Mesh:
     """! Convert layout to triangle mesh.
 
     @param layout The layout (either cuboid or triangle mesh).

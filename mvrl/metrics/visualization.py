@@ -1,10 +1,11 @@
-from typing import Optional, Union
+from typing import Optional
 
 import rerun as rr
 from meshlib import mrmeshnumpy, mrmeshpy
 from rerun.datatypes import Rgba32Like
 
 from ..cuboid import Cuboid
+from ..utils import Layout
 
 
 def visualize_camera(name: str, R, t, K, width, height) -> None:
@@ -22,7 +23,7 @@ def visualize_mesh(name: str, mesh: mrmeshpy.Mesh, albedo_factor: Optional[Rgba3
     rr.log(name, rr.Mesh3D(vertex_positions=verts, triangle_indices=faces, albedo_factor=albedo_factor))
 
 
-def visualize_layout(name: str, layout: Union[Cuboid, mrmeshpy.Mesh], color: Optional[Rgba32Like] = None) -> None:
+def visualize_layout(name: str, layout: Layout, color: Optional[Rgba32Like] = None) -> None:
     rr.log(name, rr.Clear(recursive=False))
     if isinstance(layout, Cuboid):
         visualize_cuboid(name, layout, color=color[:3] if color is not None else None)

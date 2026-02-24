@@ -1,10 +1,7 @@
-from typing import Union
-
 import numpy as np
 from meshlib import mrmeshpy
 
-from ..cuboid import Cuboid
-from ..utils import layout_to_mesh
+from ..utils import Layout, layout_to_mesh
 
 
 def unary_union(mesh: mrmeshpy.Mesh) -> mrmeshpy.Mesh:
@@ -45,7 +42,7 @@ def multi_component_intersection(mesh1: mrmeshpy.Mesh, mesh2: mrmeshpy.Mesh) -> 
     return intersection
 
 
-def iou3d(layout1: Union[Cuboid, mrmeshpy.Mesh], layout2: Union[Cuboid, mrmeshpy.Mesh]) -> float:
+def iou3d(layout1: Layout, layout2: Layout) -> float:
     """! Compute the 3D intersection-over-union (IoU) between two room layouts.
 
     @param layout1, layout2 The layouts (either cuboids or triangle meshes).

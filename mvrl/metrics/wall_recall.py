@@ -1,10 +1,9 @@
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
 import numpy as np
 from meshlib import mrmeshpy
 
-from ..cuboid import Cuboid
-from ..utils import layout_to_mesh
+from ..utils import Layout, layout_to_mesh
 
 
 def dot(v1: mrmeshpy.Vector3f, v2: mrmeshpy.Vector3f) -> float:
@@ -86,8 +85,8 @@ def sample_points(
 
 
 def wall_recall(
-    layout_gt: Union[Cuboid, mrmeshpy.Mesh],
-    layout_pred: Union[Cuboid, mrmeshpy.Mesh],
+    layout_gt: Layout,
+    layout_pred: Layout,
     angle_thr: float = np.deg2rad(1),
     up: np.ndarray = np.array([0, 0, 1]),
     dist_thr: float = 0.25,
