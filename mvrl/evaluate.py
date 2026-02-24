@@ -4,17 +4,31 @@ from pathlib import Path
 
 import numpy as np
 import tqdm
+from meshlib import mrmeshpy
 
 from .cuboid import Cuboid
 from .metric import Metric
 from .metrics import chamfer_distance, iou3d, rotation_error, wall_recall
 from .utils import (
     DATASETS,
+    Layout,
     dataset_dir,
     flatten_multi_room,
     get_layout,
+    layout_to_mesh,
     remove_floor_ceiling,
 )
+
+
+def multi_room_wall_recall(layout_gt: Layout, layout_pred: Layout, wall_metric: Metric, room_metric: Metric):
+    mesh_gt = layout_to_mesh(layout_gt)
+    components = mrmeshpy.getAllComponents(mesh_gt)
+    for i in range(len(components)):
+        mesh_comp = mesh_gt.cloneRegion(components[i])
+        recall = wall_recall(mesh_comp, layout_pred)
+        wall_metric.add(recall)
+        room_metric.add(all(recall))
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate predicted layouts")
@@ -74,9 +88,7 @@ if __name__ == "__main__":
             if "chamfer" in args.metrics:
                 chamfer_metric.add(chamfer_distance(layout_gt, layouts_pred[idx], seed))
             if "recall" in args.metrics:
-                recall = wall_recall(layout_gt, layouts_pred[idx])
-                wall_metric.add(recall)
-                room_metric.add(all(recall))
+                recall = multi_room_wall_recall(layout_gt, layouts_pred[idx], wall_metric, room_metric)
         else:
             for layout_pred in layouts_pred:
                 if "iou" in args.metrics:
@@ -86,9 +98,7 @@ if __name__ == "__main__":
                 if "chamfer" in args.metrics:
                     chamfer_metric.add(chamfer_distance(layout_gt, layout_pred, seed))
                 if "recall" in args.metrics:
-                    recall = wall_recall(layout_gt, layout_pred)
-                    wall_metric.add(recall)
-                    room_metric.add(all(recall))
+                    recall = multi_room_wall_recall(layout_gt, layout_pred, wall_metric, room_metric)
 
     iou_metric.print()
     rot_metric.print(auc_thr=[1, 5, 10, 20])
