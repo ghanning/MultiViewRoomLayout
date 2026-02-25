@@ -38,6 +38,8 @@ def cluster_faces(
             topology.getTriEdges(fi, *ei)
             for i in range(3):
                 fj = topology.right(ei[i])
+                if fj.get() < 0:  # Boundary edge
+                    continue
                 if fj.get() not in visited and dot(normals[fi], normals[fj]) > cos_thr:
                     visited.add(fj.get())
                     stack.append(fj)
