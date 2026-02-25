@@ -295,6 +295,26 @@ def flatten_multi_room(image_tuples: List, layouts_gt: Optional[Dict], layouts_p
     return image_tuples_new, layouts_gt_new, layouts_pred_new
 
 
+def unflatten_predictions(layouts_pred: List, image_tuples: List) -> List:
+    """! Unflatten predictions for multi-room datasets.
+
+    @param layouts_pred The predictions (one per room).
+    @param image_tuples The image tuples.
+    @return The unflattened predictions (one per scene).
+    """
+    layouts_pred_new = []
+    idx = 0
+
+    for image_tuple in image_tuples:
+        room_layouts = {}
+        for room in image_tuple["images"].keys():
+            room_layouts[room] = layouts_pred[idx]
+            idx += 1
+        layouts_pred_new.append(room_layouts)
+
+    return layouts_pred_new
+
+
 def merge_layout(layout: Dict) -> Dict:
     """! Merge multi-room layout into a single (mesh) layout.
 

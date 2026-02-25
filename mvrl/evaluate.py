@@ -17,6 +17,7 @@ from .utils import (
     get_layout,
     layout_to_mesh,
     remove_floor_ceiling,
+    unflatten_predictions,
 )
 
 
@@ -40,6 +41,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--use_best", "-ub", action="store_true", help="Use prediction with highest IoU for each scene")
     parser.add_argument("--flatten", "-f", action="store_true", help="Flatten multi-room layouts")
+    parser.add_argument("--unflatten", "-uf", action="store_true", help="Unflatten multi-room layouts")
     parser.add_argument(
         "--only_walls", "-ow", action="store_true", help="Remove floor and ceiling from ground truth layouts"
     )
@@ -53,6 +55,9 @@ if __name__ == "__main__":
 
     with open(args.pred) as f:
         layout_preds_per_tuple = json.load(f)
+
+    if args.unflatten:  # Unflatten predictions
+        layout_preds_per_tuple = unflatten_predictions(layout_preds_per_tuple, image_tuples)
 
     if args.flatten:  # Flatten lists to compute metrics per room instead of per scene
         image_tuples, layouts_gt, layout_preds_per_tuple = flatten_multi_room(
