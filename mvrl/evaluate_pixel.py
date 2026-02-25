@@ -17,6 +17,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", "-d", required=True, choices=DATASETS, help="Dataset")
     parser.add_argument("--split", "-s", required=True, help="Data split ('train', 'val', 'test' etc.)")
     parser.add_argument("--num_images", "-ni", type=int, help="Number of images per tuple (ScanNet++/ASE)")
+    parser.add_argument("--flatten", "-f", action="store_true", help="Flatten multi-room layouts")
     parser.add_argument(
         "--normal_angle_threshold", "-nat", type=float, default=10.0, help="Normal angle error threshold"
     )
@@ -31,7 +32,7 @@ if __name__ == "__main__":
     with open(args.pred) as f:
         layout_preds_per_tuple = json.load(f)
 
-    if args.dataset == "ase" or args.split == "multi_room":
+    if args.flatten:  # Flatten lists to compute metrics per room instead of per scene
         image_tuples, layouts_gt, layout_preds_per_tuple = flatten_multi_room(
             image_tuples, layouts_gt, layout_preds_per_tuple
         )

@@ -225,7 +225,14 @@ def get_images(
     @return A list of Image namedtuples.
     """
     scene = image_tuple["scene"]
-    scene = scene.split(":")[0]  # For multi-room datasets
+    scene = scene.split(":")[0]  # For flattened multi-room datasets
+
+    if isinstance(image_tuple["images"], dict):  # Multi-room dataset
+        images = []
+        for room, imgs in image_tuple["images"].items():
+            image_tuple_room = {"scene": f"{scene}:{room}", "images": imgs}
+            images.extend(get_images(dataset, root_dir, image_tuple_room, cache, num_images))
+        return images
 
     if dataset == "scannetpp":
         images = get_images_scannetpp(root_dir, scene, image_tuple["images"][:num_images], cache)
@@ -289,7 +296,7 @@ def flatten_multi_room(image_tuples: List, layouts_gt: Optional[Dict], layouts_p
 
 
 def merge_layout(layout: Dict) -> Dict:
-    """! Merge multi-room layout into a single layout.
+    """! Merge multi-room layout into a single (mesh) layout.
 
     @param layout The multi-room layout.
     @return The merged layout.
