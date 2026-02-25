@@ -52,7 +52,7 @@ python -m mvrl.undistort_images_ase --root_dir ROOT_DIR
 
 The subset of cuboid-shaped scenes in ScanNet++ v2 have been split into training (391 scenes), validation (10 scenes) and test (18 scenes) sets according to the files [scenes_train.txt](dataset/scannetpp/scenes_train.txt), [scenes_val.txt](dataset/scannetpp/scenes_val.txt) and [scenes_test.txt](dataset/scannetpp/scenes_test.txt).
 
-An additional set of 160 scenes including non-cuboid rooms and multi-room scenes are available in [scenes_multi_room.txt](dataset/scannetpp/scenes_multi_room.txt).
+An additional set of 80 scenes including non-cuboid rooms and multi-room scenes are available in [scenes_multi_room.txt](dataset/scannetpp/scenes_multi_room.txt).
 
 #### 2D-3D-Semantics
 
