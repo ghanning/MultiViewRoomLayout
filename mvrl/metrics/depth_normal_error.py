@@ -55,7 +55,7 @@ def render_layout(
         verts, faces = mrmeshnumpy.getNumpyVerts(layout), mrmeshnumpy.getNumpyFaces(layout.topology)
 
     face_normals = np.cross(verts[faces[:, 1]] - verts[faces[:, 0]], verts[faces[:, 2]] - verts[faces[:, 0]], axis=1)
-    face_normals /= np.linalg.norm(face_normals, axis=1, keepdims=True)
+    face_normals /= np.linalg.norm(face_normals, axis=1, keepdims=True) + 1e-8
 
     verts = verts[faces[:, [1, 0, 2]]].reshape(-1, 3)
     vert_normals = np.repeat(face_normals, 3, axis=0)
