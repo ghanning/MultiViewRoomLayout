@@ -225,13 +225,11 @@ def get_images(
     @return A list of Image namedtuples.
     """
     scene = image_tuple["scene"]
-    scene = scene.split(":")[0]  # For flattened multi-room datasets
 
     if isinstance(image_tuple["images"], dict):  # Multi-room dataset
         images = []
-        for room, imgs in image_tuple["images"].items():
-            image_tuple_room = {"scene": f"{scene}:{room}", "images": imgs}
-            images.extend(get_images(dataset, root_dir, image_tuple_room, cache, num_images))
+        for imgs in image_tuple["images"].values():
+            images.extend(get_images(dataset, root_dir, {"scene": scene, "images": imgs}, cache, num_images))
         return images
 
     if dataset == "scannetpp":
@@ -254,45 +252,6 @@ def chunk(sequence: Iterable, size: int) -> Generator[Iterable, None, None]:
     @return The chunks.
     """
     return (sequence[idx : idx + size] for idx in range(0, len(sequence), size))
-
-
-def flatten_multi_room(image_tuples: List, layouts_gt: Optional[Dict], layouts_pred: List) -> Tuple[List, Dict, List]:
-    """! Flatten a multi-room dataset.
-
-    @param image_tuples The image tuples.
-    @param layouts_gt Ground truth layouts.
-    @param layouts_pred Predicted layouts.
-    @return The split dataset.
-    """
-    image_tuples_new = []
-    split_pred = len(layouts_pred) == len(image_tuples)
-    layouts_pred_new = [] if split_pred else layouts_pred
-
-    for idx, image_tuple in enumerate(image_tuples):
-        scene = image_tuple["scene"]
-        for room, images in image_tuple["images"].items():
-            new_tuple = {
-                "scene": f"{scene}:{room}",
-                "images": images,
-            }
-            if "perspective_images" in image_tuple:  # 2d3ds
-                new_tuple["perspective_images"] = image_tuple["perspective_images"][room]
-            image_tuples_new.append(new_tuple)
-            if split_pred:
-                if room in layouts_pred[idx]:
-                    layouts_pred_new.append(layouts_pred[idx][room])
-                else:  # Single prediction, duplicate for each room
-                    layouts_pred_new.append(layouts_pred[idx])
-
-    if layouts_gt is not None:
-        layouts_gt_new = {}
-        for scene, layouts in layouts_gt.items():
-            for room, layout in layouts.items():
-                layouts_gt_new[f"{scene}:{room}"] = layout
-    else:
-        layouts_gt_new = None
-
-    return image_tuples_new, layouts_gt_new, layouts_pred_new
 
 
 def unflatten_predictions(layouts_pred: List, image_tuples: List) -> List:
