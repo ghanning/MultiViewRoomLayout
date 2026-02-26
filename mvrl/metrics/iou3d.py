@@ -50,7 +50,7 @@ def iou3d(layout1: Layout, layout2: Layout) -> float:
     """
     mesh1, mesh2 = layout_to_mesh(layout1), layout_to_mesh(layout2)
     if mesh1.topology.numValidFaces() == 0 or mesh2.topology.numValidFaces() == 0:
-        return np.nan
+        return 0.0
     assert mesh1.volume() > 0.0 and mesh2.volume() > 0.0, "Zero or negative volume"
 
     # Unionize each layout in case they contain multiple, overlapping components (rooms)
