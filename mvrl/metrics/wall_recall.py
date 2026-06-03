@@ -49,15 +49,12 @@ def cluster_faces(
     return clusters
 
 
-def sample_points(
-    mesh: mrmeshpy.Mesh, face_ids: List[mrmeshpy.FaceId], dist: float = 0.25
-) -> Tuple[np.ndarray, np.ndarray]:
-    """! Sample points on the quad defined by two faces.
+def get_quad(mesh: mrmeshpy.Mesh, face_ids: List[mrmeshpy.FaceId]) -> np.ndarray:
+    """! Get the quad vertices defined by two adjacent faces.
 
     @param mesh The mesh.
     @param face_ids The two face IDs defining the quad.
-    @param dist The approximate distance between sampled points.
-    @return The sampled points and the quad vertices.
+    @return The quad vertices as a 4x3 numpy array.
     """
     assert len(face_ids) == 2  # We only support quads formed by two triangles
     f0, f1 = face_ids
@@ -71,7 +68,16 @@ def sample_points(
 
     points = [mesh.points[mrmeshpy.VertId(id)] for id in vi]
     quad = np.array([[p.x, p.y, p.z] for p in points])
+    return quad
 
+
+def sample_points(quad: np.ndarray, dist: float = 0.25) -> np.ndarray:
+    """! Sample points on a quad.
+
+    @param quad The quad vertices as a 4x3 numpy array.
+    @param dist The approximate distance between sampled points.
+    @return The sampled points and the quad vertices.
+    """
     width = np.linalg.norm(quad[1] - quad[0])
     height = np.linalg.norm(quad[3] - quad[0])
     num_u = max(1, int(np.ceil(width / dist)))
@@ -84,6 +90,38 @@ def sample_points(
 
     # Bilinear interpolation on quad
     return (quad[0] * (1 - uu) * (1 - vv) + quad[1] * uu * (1 - vv) + quad[2] * uu * vv + quad[3] * (1 - uu) * vv), quad
+
+
+def get_wall_quads(mesh: mrmeshpy.Mesh, angle_thr: float, up: np.ndarray):
+    """! Get the wall quads from a layout mesh.
+
+    @param mesh The layout mesh.
+    @param angle_thr The angle threshold (in radians) for clustering faces.
+    @param up The up vector.
+    @return A list of wall quads as 4x3 numpy arrays.
+    """
+    normals = mrmeshpy.computePerFaceNormals(mesh)
+    clusters = cluster_faces(mesh.topology, normals, angle_thr)
+
+    debug = False
+    if debug:
+        import matplotlib.colors as mcolors
+        import rerun as rr
+
+        rr.init("wall_recall_clusters", spawn=True)
+        rr.log("cluster", rr.Clear(recursive=True))
+        colors = [mcolors.to_rgb(v) for v in mcolors.TABLEAU_COLORS.values()]
+        for idx, c in enumerate(clusters):
+            verts = []
+            for f in c:
+                verts.extend([[vi.x, vi.y, vi.z] for vi in mesh.getTriPoints(f)])
+            cols = np.tile(colors[idx % len(colors)], (len(verts), 1))
+            rr.log(f"cluster/{idx}", rr.Mesh3D(vertex_positions=verts, vertex_colors=cols))
+
+        breakpoint()
+
+    quads = [get_quad(mesh, c) for c in clusters if abs(dot(normals[c[0]], up)) < 0.5]
+    return quads
 
 
 def wall_recall(
@@ -105,30 +143,11 @@ def wall_recall(
     @return A list of booleans indicating success for each wall.
     """
     mesh_gt, mesh_pred = layout_to_mesh(layout_gt), layout_to_mesh(layout_pred)
-    normals = mrmeshpy.computePerFaceNormals(mesh_gt)
-    clusters = cluster_faces(mesh_gt.topology, normals, angle_thr)
-
-    debug = False
-    if debug:
-        import matplotlib.colors as mcolors
-        import rerun as rr
-
-        rr.init("wall_recall_clusters", spawn=True)
-        colors = [mcolors.to_rgb(v) for v in mcolors.TABLEAU_COLORS.values()]
-        for idx, c in enumerate(clusters):
-            verts = []
-            for f in c:
-                verts.extend([[vi.x, vi.y, vi.z] for vi in mesh_gt.getTriPoints(f)])
-            cols = np.tile(colors[idx % len(colors)], (len(verts), 1))
-            rr.log(f"cluster_{idx}", rr.Mesh3D(vertex_positions=verts, vertex_colors=cols))
-
-        breakpoint()
-
-    clusters = [c for c in clusters if abs(dot(normals[c[0]], up)) < 0.5]  # Remove floor/ceiling
+    walls_gt = get_wall_quads(mesh_gt, angle_thr, up)
 
     success = []
-    for c in clusters:  # Loop over walls
-        points, quad = sample_points(mesh_gt, c)
+    for quad in walls_gt:
+        points, quad = sample_points(quad)
         if mesh_pred.topology.numValidFaces() > 0:
             dist = np.array([mesh_pred.signedDistance(mrmeshpy.Vector3f(p[0], p[1], p[2])) for p in points])
         else:

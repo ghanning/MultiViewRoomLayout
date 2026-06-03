@@ -8,7 +8,7 @@ from meshlib import mrmeshpy
 
 from .cuboid import Cuboid
 from .metric import Metric
-from .metrics import chamfer_distance, iou3d, rotation_error, wall_recall
+from .metrics import chamfer_distance, iou3d, rotation_error, wall_f1, wall_recall
 from .utils import (
     DATASETS,
     Layout,
@@ -36,16 +36,19 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", "-d", required=True, choices=DATASETS, help="Dataset")
     parser.add_argument("--split", "-s", required=True, help="Data split ('train', 'val', 'test' etc.)")
     parser.add_argument(
-        "--metrics", "-m", nargs="+", default=["iou", "rotation", "chamfer", "recall"], help="Metrics to evaluate"
+        "--metrics", "-m", nargs="+", default=["iou", "rotation", "chamfer", "recall", "f1"], help="Metrics to evaluate"
     )
+    parser.add_argument("--f1_iou_thr", "-fiou", type=float, default=0.5, help="IoU threshold for wall F1 score")
     parser.add_argument("--use_best", "-ub", action="store_true", help="Use prediction with highest IoU for each scene")
     parser.add_argument("--unflatten", "-uf", action="store_true", help="Unflatten multi-room layouts")
     parser.add_argument(
         "--only_walls", "-ow", action="store_true", help="Remove floor and ceiling from ground truth layouts"
     )
+    parser.add_argument("--image_tuples", "-it", type=Path, help="Path to file with image tuples")
     args = parser.parse_args()
 
-    with open(dataset_dir() / args.dataset / f"images_{args.split}.json") as f:
+    image_tuples_path = args.image_tuples or dataset_dir() / args.dataset / f"images_{args.split}.json"
+    with open(image_tuples_path) as f:
         image_tuples = json.load(f)
 
     with open(dataset_dir() / args.dataset / f"layouts_{args.split}.json") as f:
@@ -66,6 +69,7 @@ if __name__ == "__main__":
     chamfer_metric = Metric("Chamfer distance", unit="m")
     wall_metric = Metric("Wall recall")
     room_metric = Metric("Room recall")
+    f1_metric = Metric(f"Wall F1 (IoU@{args.f1_iou_thr})")
     seed = 1234
 
     for image_tuple, layouts_pred in tqdm.tqdm(list(zip(image_tuples, layout_preds_per_tuple))):
@@ -86,7 +90,9 @@ if __name__ == "__main__":
             if "chamfer" in args.metrics:
                 chamfer_metric.add(chamfer_distance(layout_gt, layouts_pred[idx], seed))
             if "recall" in args.metrics:
-                recall = multi_room_wall_recall(layout_gt, layouts_pred[idx], wall_metric, room_metric)
+                multi_room_wall_recall(layout_gt, layouts_pred[idx], wall_metric, room_metric)
+            if "f1" in args.metrics:
+                f1_metric.add(wall_f1(layout_gt, layouts_pred[idx], iou_threshold=args.f1_iou_thr))
         else:
             for layout_pred in layouts_pred:
                 if "iou" in args.metrics:
@@ -96,10 +102,13 @@ if __name__ == "__main__":
                 if "chamfer" in args.metrics:
                     chamfer_metric.add(chamfer_distance(layout_gt, layout_pred, seed))
                 if "recall" in args.metrics:
-                    recall = multi_room_wall_recall(layout_gt, layout_pred, wall_metric, room_metric)
+                    multi_room_wall_recall(layout_gt, layout_pred, wall_metric, room_metric)
+                if "f1" in args.metrics:
+                    f1_metric.add(wall_f1(layout_gt, layout_pred, iou_threshold=args.f1_iou_thr))
 
     iou_metric.print()
     rot_metric.print(auc_thr=[1, 5, 10, 20])
     chamfer_metric.print()
     wall_metric.print()
     room_metric.print()
+    f1_metric.print()

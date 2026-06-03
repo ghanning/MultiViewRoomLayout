@@ -10,13 +10,15 @@ from projectaria_tools.projects import ase
 from .utils import dataset_dir
 
 if __name__ == "__main__":
+    default_scenes = [dataset_dir() / "ase" / f"scenes_{split}.txt" for split in ("val", "test")]
     parser = argparse.ArgumentParser(description="Undistort ASE images")
     parser.add_argument("--root_dir", "-rd", type=Path, required=True, help="Path to ASE root directory")
+    parser.add_argument("--scenes", "-s", type=Path, nargs="+", default=default_scenes, help="Scenes to process")
     args = parser.parse_args()
 
     scenes = []
-    for split in ("val", "test"):
-        with open(dataset_dir() / "ase" / f"scenes_{split}.txt") as f:
+    for path in args.scenes:
+        with open(path) as f:
             scenes.extend([line.strip() for line in f.readlines()])
 
     device = ase.get_ase_rgb_calibration()
