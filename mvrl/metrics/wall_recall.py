@@ -91,6 +91,38 @@ def sample_points(quad: np.ndarray, dist: float = 0.25) -> np.ndarray:
     return (quad[0] * (1 - uu) * (1 - vv) + quad[1] * uu * (1 - vv) + quad[2] * uu * vv + quad[3] * (1 - uu) * vv), quad
 
 
+def get_wall_quads(mesh: mrmeshpy.Mesh, angle_thr: float, up: np.ndarray):
+    """! Get the wall quads from a layout mesh.
+
+    @param mesh The layout mesh.
+    @param angle_thr The angle threshold (in radians) for clustering faces.
+    @param up The up vector.
+    @return A list of wall quads as 4x3 numpy arrays.
+    """
+    normals = mrmeshpy.computePerFaceNormals(mesh)
+    clusters = cluster_faces(mesh.topology, normals, angle_thr)
+
+    debug = False
+    if debug:
+        import matplotlib.colors as mcolors
+        import rerun as rr
+
+        rr.init("wall_recall_clusters", spawn=True)
+        rr.log("cluster", rr.Clear(recursive=True))
+        colors = [mcolors.to_rgb(v) for v in mcolors.TABLEAU_COLORS.values()]
+        for idx, c in enumerate(clusters):
+            verts = []
+            for f in c:
+                verts.extend([[vi.x, vi.y, vi.z] for vi in mesh.getTriPoints(f)])
+            cols = np.tile(colors[idx % len(colors)], (len(verts), 1))
+            rr.log(f"cluster/{idx}", rr.Mesh3D(vertex_positions=verts, vertex_colors=cols))
+
+        breakpoint()
+
+    quads = [get_quad(mesh, c) for c in clusters if abs(dot(normals[c[0]], up)) < 0.5]
+    return quads
+
+
 def wall_recall(
     layout_gt: Union[Cuboid, mrmeshpy.Mesh],
     layout_pred: Union[Cuboid, mrmeshpy.Mesh],
@@ -110,30 +142,10 @@ def wall_recall(
     @return A list of booleans indicating success for each wall.
     """
     mesh_gt, mesh_pred = layout_to_mesh(layout_gt), layout_to_mesh(layout_pred)
-    normals = mrmeshpy.computePerFaceNormals(mesh_gt)
-    clusters = cluster_faces(mesh_gt.topology, normals, angle_thr)
-
-    debug = False
-    if debug:
-        import matplotlib.colors as mcolors
-        import rerun as rr
-
-        rr.init("wall_recall_clusters", spawn=True)
-        colors = [mcolors.to_rgb(v) for v in mcolors.TABLEAU_COLORS.values()]
-        for idx, c in enumerate(clusters):
-            verts = []
-            for f in c:
-                verts.extend([[vi.x, vi.y, vi.z] for vi in mesh_gt.getTriPoints(f)])
-            cols = np.tile(colors[idx % len(colors)], (len(verts), 1))
-            rr.log(f"cluster_{idx}", rr.Mesh3D(vertex_positions=verts, vertex_colors=cols))
-
-        breakpoint()
-
-    clusters = [c for c in clusters if abs(dot(normals[c[0]], up)) < 0.5]  # Remove floor/ceiling
+    walls_gt = get_wall_quads(mesh_gt, angle_thr, up)
 
     success = []
-    for c in clusters:  # Loop over walls
-        quad = get_quad(mesh_gt, c)
+    for quad in walls_gt:
         points, quad = sample_points(quad)
         if mesh_pred.topology.numValidFaces() > 0:
             dist = np.array([mesh_pred.signedDistance(mrmeshpy.Vector3f(p[0], p[1], p[2])) for p in points])
