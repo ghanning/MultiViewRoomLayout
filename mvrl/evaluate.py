@@ -31,9 +31,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--only_walls", "-ow", action="store_true", help="Remove floor and ceiling from ground truth layouts"
     )
+    parser.add_argument("--image_tuples", "-it", type=Path, help="Path to file with image tuples")
     args = parser.parse_args()
 
-    with open(dataset_dir() / args.dataset / f"images_{args.split}.json") as f:
+    image_tuples_path = args.image_tuples or dataset_dir() / args.dataset / f"images_{args.split}.json"
+    with open(image_tuples_path) as f:
         image_tuples = json.load(f)
 
     with open(dataset_dir() / args.dataset / f"layouts_{args.split}.json") as f:
