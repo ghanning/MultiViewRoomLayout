@@ -48,15 +48,12 @@ def cluster_faces(
     return clusters
 
 
-def sample_points(
-    mesh: mrmeshpy.Mesh, face_ids: List[mrmeshpy.FaceId], dist: float = 0.25
-) -> Tuple[np.ndarray, np.ndarray]:
-    """! Sample points on the quad defined by two faces.
+def get_quad(mesh: mrmeshpy.Mesh, face_ids: List[mrmeshpy.FaceId]) -> np.ndarray:
+    """! Get the quad vertices defined by two adjacent faces.
 
     @param mesh The mesh.
     @param face_ids The two face IDs defining the quad.
-    @param dist The approximate distance between sampled points.
-    @return The sampled points and the quad vertices.
+    @return The quad vertices as a 4x3 numpy array.
     """
     assert len(face_ids) == 2  # We only support quads formed by two triangles
     f0, f1 = face_ids
@@ -70,7 +67,16 @@ def sample_points(
 
     points = [mesh.points[mrmeshpy.VertId(id)] for id in vi]
     quad = np.array([[p.x, p.y, p.z] for p in points])
+    return quad
 
+
+def sample_points(quad: np.ndarray, dist: float = 0.25) -> np.ndarray:
+    """! Sample points on a quad.
+
+    @param quad The quad vertices as a 4x3 numpy array.
+    @param dist The approximate distance between sampled points.
+    @return The sampled points and the quad vertices.
+    """
     width = np.linalg.norm(quad[1] - quad[0])
     height = np.linalg.norm(quad[3] - quad[0])
     num_u = max(1, int(np.ceil(width / dist)))
@@ -127,7 +133,8 @@ def wall_recall(
 
     success = []
     for c in clusters:  # Loop over walls
-        points, quad = sample_points(mesh_gt, c)
+        quad = get_quad(mesh_gt, c)
+        points, quad = sample_points(quad)
         if mesh_pred.topology.numValidFaces() > 0:
             dist = np.array([mesh_pred.signedDistance(mrmeshpy.Vector3f(p[0], p[1], p[2])) for p in points])
         else:
