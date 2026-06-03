@@ -41,7 +41,7 @@ def are_planes_parallel_and_close(
 
     return (
         np.linalg.norm(np.cross(n1, n2)) / (n1_length * n2_length) < parallel_tolerance
-        and np.dot(np.subtract(q1, p1), n1) / n1_length < dist_tolerance
+        and np.abs(np.dot(np.subtract(q1, p1), n1)) / n1_length < dist_tolerance
     )
 
 
