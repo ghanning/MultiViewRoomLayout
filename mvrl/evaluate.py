@@ -7,7 +7,7 @@ import tqdm
 
 from .cuboid import Cuboid
 from .metric import Metric
-from .metrics import chamfer_distance, iou3d, rotation_error, wall_recall
+from .metrics import chamfer_distance, iou3d, rotation_error, wall_f1, wall_recall
 from .utils import (
     DATASETS,
     dataset_dir,
@@ -23,8 +23,9 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", "-d", required=True, choices=DATASETS, help="Dataset")
     parser.add_argument("--split", "-s", required=True, help="Data split ('train', 'val', 'test' etc.)")
     parser.add_argument(
-        "--metrics", "-m", nargs="+", default=["iou", "rotation", "chamfer", "recall"], help="Metrics to evaluate"
+        "--metrics", "-m", nargs="+", default=["iou", "rotation", "chamfer", "recall", "f1"], help="Metrics to evaluate"
     )
+    parser.add_argument("--f1_iou_thr", "-fiou", type=float, default=0.5, help="IoU threshold for wall F1 score")
     parser.add_argument("--use_best", "-ub", action="store_true", help="Use prediction with highest IoU for each scene")
     parser.add_argument("--combine_rooms", "-cr", action="store_true", help="Combine multi-room ground truth layouts")
     parser.add_argument(
@@ -57,6 +58,7 @@ if __name__ == "__main__":
     chamfer_metric = Metric("Chamfer distance", unit="m")
     wall_metric = Metric("Wall recall")
     room_metric = Metric("Room recall")
+    f1_metric = Metric(f"Wall F1 (IoU@{args.f1_iou_thr})")
     seed = 1234
 
     for image_tuple, layouts_pred in tqdm.tqdm(list(zip(image_tuples, layout_preds_per_tuple))):
@@ -82,6 +84,8 @@ if __name__ == "__main__":
                 recall = wall_recall(layout_gt, layouts_pred[idx])
                 wall_metric.add(recall)
                 room_metric.add(all(recall))
+            if "f1" in args.metrics:
+                f1_metric.add(wall_f1(layout_gt, layouts_pred[idx], iou_threshold=args.f1_iou_thr))
         else:
             for layout_pred in layouts_pred:
                 if "iou" in args.metrics:
@@ -94,9 +98,12 @@ if __name__ == "__main__":
                     recall = wall_recall(layout_gt, layout_pred)
                     wall_metric.add(recall)
                     room_metric.add(all(recall))
+                if "f1" in args.metrics:
+                    f1_metric.add(wall_f1(layout_gt, layout_pred, iou_threshold=args.f1_iou_thr))
 
     iou_metric.print()
     rot_metric.print(auc_thr=[1, 5, 10, 20])
     chamfer_metric.print()
     wall_metric.print()
     room_metric.print()
+    f1_metric.print()
