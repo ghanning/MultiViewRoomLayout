@@ -74,6 +74,8 @@ if __name__ == "__main__":
 
     for image_tuple, layouts_pred in tqdm.tqdm(list(zip(image_tuples, layout_preds_per_tuple))):
         scene = image_tuple["scene"]
+        if "scene" in layouts_pred:
+            assert layouts_pred["scene"] == scene, f"Mismatching scenes {scene} / {layouts_pred['scene']}"
         layout_gt = get_layout(layouts_gt[scene])
 
         if not isinstance(layouts_pred, list):
