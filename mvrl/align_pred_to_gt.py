@@ -13,7 +13,6 @@ from .utils import (
     DATASETS,
     Image,
     dataset_dir,
-    flatten_multi_room,
     get_images,
     get_layout,
     layout_to_mesh,
@@ -63,18 +62,17 @@ if __name__ == "__main__":
     parser.add_argument("--input_pred", "-ip", type=Path, required=True, help="Path to file with input predictions")
     parser.add_argument("--output_pred", "-op", type=Path, required=True, help="Path to file with output predictions")
     parser.add_argument("--dataset", "-d", required=True, choices=DATASETS, help="Dataset")
-    parser.add_argument("--split", "-s", required=True, help="Data split ('train', 'val', 'test' etc.)")
+    parser.add_argument("--split", "-s", help="Data split ('train', 'val', 'test' etc.)")
     parser.add_argument("--max_error", "-me", type=float, help="Maximum RANSAC error (m)")
+    parser.add_argument("--image_tuples", "-it", type=Path, help="Path to file with image tuples")
     args = parser.parse_args()
 
-    with open(dataset_dir() / args.dataset / f"images_{args.split}.json") as f:
+    image_tuples_path = args.image_tuples or dataset_dir() / args.dataset / f"images_{args.split}.json"
+    with open(image_tuples_path) as f:
         image_tuples = json.load(f)
 
     with open(args.input_pred) as f:
         layouts = json.load(f)
-
-    if args.dataset == "ase" or args.split == "multi_room":
-        image_tuples, _, layouts = flatten_multi_room(image_tuples, None, layouts)
     assert len(layouts) == len(image_tuples)
 
     mean_metric = Metric("Mean alignment error", unit="m")
