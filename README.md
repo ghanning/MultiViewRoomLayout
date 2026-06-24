@@ -7,7 +7,11 @@ Each dataset consists of a set of *image tuples* and corresponding *ground truth
 ![Multi-view room layout estimation](assets/teaser.jpg)
 *Given images with known camera poses captured inside a room the goal is to estimate the room layout.*
 
-The datasets were created during the course of our work on the room layout estimation method [PixCuboid](https://github.com/ghanning/PixCuboid).
+The datasets were created during the course of our work on the room layout estimation methods [PixCuboid](https://github.com/ghanning/PixCuboid) and [PolyLayout](https://github.com/ghanning/PolyLayout).
+
+PixCuboid introduced the training, validation and test sets with cuboid rooms from ScanNet++ and the 2D-3D-Semantics test set (also with only cuboids).
+
+The follow-up paper PolyLayout added multi-room validation and test sets created from Aria Synthetic Environments plus a set of new, manually annotated multi-room scenes for ScanNet++. These contain a mix of cuboid and non-cuboid room layouts.
 
 ## Installation
 
@@ -52,7 +56,7 @@ python -m mvrl.undistort_images_ase --root_dir ROOT_DIR
 
 The subset of cuboid-shaped scenes in ScanNet++ v2 have been split into training (391 scenes), validation (10 scenes) and test (18 scenes) sets according to the files [scenes_train.txt](dataset/scannetpp/scenes_train.txt), [scenes_val.txt](dataset/scannetpp/scenes_val.txt) and [scenes_test.txt](dataset/scannetpp/scenes_test.txt).
 
-An additional set of 160 scenes including non-cuboid rooms and multi-room scenes are available in [scenes_multi_room.txt](dataset/scannetpp/scenes_multi_room.txt).
+An additional set of 80 scenes including non-cuboid rooms and multi-room scenes are available in [scenes_multi_room.txt](dataset/scannetpp/scenes_multi_room.txt).
 
 #### 2D-3D-Semantics
 
@@ -292,6 +296,15 @@ If you use these datasets consider citing our work:
   author={Hanning, Gustav and Åström, Kalle and Larsson, Viktor},
   booktitle={Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) Workshops},
   year={2025},
+}
+```
+
+```
+@inproceedings{hanning2026polylayout,
+  title={{PolyLayout: Multi-room Manhattan Layout Estimation}},
+  author={Hanning, Gustav and Liu, Shaohui and Pautrat, Rémi and Pollefeys, Marc and Åström, Kalle and Larsson, Viktor},
+  booktitle={European Conference on Computer Vision},
+  year={2026},
 }
 ```
 

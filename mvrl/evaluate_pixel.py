@@ -8,7 +8,13 @@ import tqdm
 from .metric import Metric
 from .metrics import depth_normal_error
 from .renderer import Renderer
-from .utils import DATASETS, dataset_dir, flatten_multi_room, get_images, get_layout
+from .utils import (
+    DATASETS,
+    dataset_dir,
+    get_images,
+    get_layout,
+    unflatten_predictions,
+)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate predicted layouts (pixel-wise metrics)")
@@ -17,6 +23,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", "-d", required=True, choices=DATASETS, help="Dataset")
     parser.add_argument("--split", "-s", required=True, help="Data split ('train', 'val', 'test' etc.)")
     parser.add_argument("--num_images", "-ni", type=int, help="Number of images per tuple (ScanNet++/ASE)")
+    parser.add_argument("--unflatten", "-uf", action="store_true", help="Unflatten multi-room layouts")
     parser.add_argument(
         "--normal_angle_threshold", "-nat", type=float, default=10.0, help="Normal angle error threshold"
     )
@@ -33,10 +40,8 @@ if __name__ == "__main__":
     with open(args.pred) as f:
         layout_preds_per_tuple = json.load(f)
 
-    if args.dataset == "ase" or args.split == "multi_room":
-        image_tuples, layouts_gt, layout_preds_per_tuple = flatten_multi_room(
-            image_tuples, layouts_gt, layout_preds_per_tuple
-        )
+    if args.unflatten:  # Unflatten predictions (for single-room method applied to multi-room dataset)
+        layout_preds_per_tuple = unflatten_predictions(layout_preds_per_tuple, image_tuples)
     assert len(layout_preds_per_tuple) == len(image_tuples)
 
     depth_metric = Metric("Depth RMSE", unit="m")
@@ -46,7 +51,10 @@ if __name__ == "__main__":
     renderer = None
 
     for image_tuple, layouts_pred in tqdm.tqdm(list(zip(image_tuples, layout_preds_per_tuple))):
-        layout_gt = get_layout(layouts_gt[image_tuple["scene"]])
+        scene = image_tuple["scene"]
+        if "scene" in layouts_pred:
+            assert layouts_pred["scene"] == scene, f"Mismatching scenes {scene} / {layouts_pred['scene']}"
+        layout_gt = get_layout(layouts_gt[scene])
         images = get_images(args.dataset, args.root_dir, image_tuple, cache, args.num_images)
 
         if not isinstance(layouts_pred, list):

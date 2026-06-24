@@ -12,6 +12,7 @@ from .cuboid import Cuboid
 DATASETS = {"scannetpp", "2d3ds", "ase"}
 
 Image = namedtuple("Image", ["R", "t", "K", "width", "height", "path"])
+Layout = Union[Cuboid, mrmeshpy.Mesh]
 
 
 def dataset_dir() -> Path:
@@ -22,18 +23,23 @@ def dataset_dir() -> Path:
     return Path(__file__).parent.parent / "dataset"
 
 
-def get_layout(input: Union[Dict, str], base_dir: Optional[Path] = None) -> Union[Cuboid, mrmeshpy.Mesh]:
+def get_layout(input: Union[Dict, str], base_dir: Optional[Path] = None) -> Layout:
     """! Get room layout.
 
     @param input One of the following:
         - A dictionary with cuboid parameters (R, t, s).
         - A dictionary with "faces" and "verts" keys for a triangle mesh.
         - A string path to a mesh file.
+        - A multi-room layout dictionary containing multiple layouts in the above formats.
     @param base_dir Base directory for relative mesh path.
     @return The cuboid or triangle mesh layout.
     """
     if isinstance(input, dict):
-        if "R" in input and "t" in input and "s" in input:
+        if all(isinstance(v, dict) for v in input.values()):  # Multi-room layout
+            layout = mrmeshpy.Mesh()
+            for v in input.values():
+                layout.addMesh(layout_to_mesh(get_layout(v, base_dir=base_dir)))
+        elif "R" in input and "t" in input and "s" in input:
             layout = Cuboid.from_dict(input)
         elif "faces" in input and "verts" in input:
             faces = np.array(input["faces"]).reshape(-1, 3)
@@ -51,7 +57,7 @@ def get_layout(input: Union[Dict, str], base_dir: Optional[Path] = None) -> Unio
     return layout
 
 
-def layout_to_mesh(layout: Union[Cuboid, mrmeshpy.Mesh]) -> mrmeshpy.Mesh:
+def layout_to_mesh(layout: Layout) -> mrmeshpy.Mesh:
     """! Convert layout to triangle mesh.
 
     @param layout The layout (either cuboid or triangle mesh).
@@ -221,7 +227,12 @@ def get_images(
     @return A list of Image namedtuples.
     """
     scene = image_tuple["scene"]
-    scene = scene.split(":")[0]  # For multi-room datasets
+
+    if isinstance(image_tuple["images"], dict):  # Multi-room dataset
+        images = []
+        for imgs in image_tuple["images"].values():
+            images.extend(get_images(dataset, root_dir, {"scene": scene, "images": imgs}, cache, num_images))
+        return images
 
     if dataset == "scannetpp":
         images = get_images_scannetpp(root_dir, scene, image_tuple["images"][:num_images], cache)
@@ -245,67 +256,24 @@ def chunk(sequence: Iterable, size: int) -> Generator[Iterable, None, None]:
     return (sequence[idx : idx + size] for idx in range(0, len(sequence), size))
 
 
-def flatten_multi_room(image_tuples: List, layouts_gt: Optional[Dict], layouts_pred: List) -> Tuple[List, Dict, List]:
-    """! Flatten a multi-room dataset.
+def unflatten_predictions(layouts_pred: List, image_tuples: List) -> List:
+    """! Unflatten predictions for multi-room datasets.
 
+    @param layouts_pred The predictions (one per room).
     @param image_tuples The image tuples.
-    @param layouts_gt Ground truth layouts.
-    @param layouts_pred Predicted layouts.
-    @return The split dataset.
+    @return The unflattened predictions (one per scene).
     """
-    image_tuples_new = []
-    split_pred = len(layouts_pred) == len(image_tuples)
-    layouts_pred_new = [] if split_pred else layouts_pred
+    layouts_pred_new = []
+    idx = 0
 
-    for idx, image_tuple in enumerate(image_tuples):
-        scene = image_tuple["scene"]
-        for room, images in image_tuple["images"].items():
-            new_tuple = {
-                "scene": f"{scene}:{room}",
-                "images": images,
-            }
-            if "perspective_images" in image_tuple:  # 2d3ds
-                new_tuple["perspective_images"] = image_tuple["perspective_images"][room]
-            image_tuples_new.append(new_tuple)
-            if split_pred:
-                layouts_pred_new.append(layouts_pred[idx][room])
+    for image_tuple in image_tuples:
+        room_layouts = {}
+        for room in image_tuple["images"].keys():
+            room_layouts[room] = layouts_pred[idx]
+            idx += 1
+        layouts_pred_new.append(room_layouts)
 
-    if layouts_gt is not None:
-        layouts_gt_new = {}
-        for scene, layouts in layouts_gt.items():
-            for room, layout in layouts.items():
-                layouts_gt_new[f"{scene}:{room}"] = layout
-    else:
-        layouts_gt_new = None
-
-    return image_tuples_new, layouts_gt_new, layouts_pred_new
-
-
-def merge_layouts(layouts: Dict) -> Dict:
-    """! Merge multi-room layouts into a single layout for each scene.
-
-    @param layouts The multi-room layouts.
-    @return The merged layouts.
-    """
-    layouts_per_scene = {}
-    for scene, layout in layouts.items():
-        scene = scene.split(":")[0]
-        if scene not in layouts_per_scene:
-            layouts_per_scene[scene] = []
-        layouts_per_scene[scene].append(layout)
-
-    layouts_merged = {}
-    for scene, layouts in layouts_per_scene.items():
-        faces, verts = [], []
-        vert_offset = 0
-        for layout in layouts:
-            mesh = layout_to_mesh(get_layout(layout))
-            faces.append(mrmeshnumpy.getNumpyFaces(mesh.topology) + vert_offset)
-            verts.append(mrmeshnumpy.getNumpyVerts(mesh))
-            vert_offset += len(verts[-1])
-        layouts_merged[scene] = {"faces": np.vstack(faces).tolist(), "verts": np.vstack(verts).tolist()}
-
-    return layouts_merged
+    return layouts_pred_new
 
 
 def remove_floor_ceiling(layouts: Dict, up: np.ndarray = np.array([0, 0, 1])) -> Dict:
