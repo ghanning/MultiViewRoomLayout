@@ -1,7 +1,7 @@
 import argparse
 import json
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import pycolmap
@@ -17,6 +17,33 @@ from .utils import (
     get_layout,
     layout_to_mesh,
 )
+
+
+def flatten_multi_room(image_tuples: List, layouts_pred: List) -> Tuple[List, List]:
+    """! Flatten a multi-room dataset.
+
+    @param image_tuples The image tuples.
+    @param layouts_pred Predicted layouts.
+    @return The split dataset.
+    """
+    image_tuples_new = []
+    split_pred = len(layouts_pred) == len(image_tuples)
+    layouts_pred_new = [] if split_pred else layouts_pred
+
+    for idx, image_tuple in enumerate(image_tuples):
+        scene = image_tuple["scene"]
+        for room, images in image_tuple["images"].items():
+            new_tuple = {
+                "scene": f"{scene}:{room}",
+                "images": images,
+            }
+            if "perspective_images" in image_tuple:  # 2d3ds
+                new_tuple["perspective_images"] = image_tuple["perspective_images"][room]
+            image_tuples_new.append(new_tuple)
+            if split_pred:
+                layouts_pred_new.append(layouts_pred[idx][room])
+
+    return image_tuples_new, layouts_pred_new
 
 
 def create_reconstruction(images: List[Image]) -> pycolmap.Reconstruction:
@@ -73,6 +100,9 @@ if __name__ == "__main__":
 
     with open(args.input_pred) as f:
         layouts = json.load(f)
+
+    if args.dataset == "ase" or args.split == "multi_room":
+        image_tuples, layouts = flatten_multi_room(image_tuples, layouts)
     assert len(layouts) == len(image_tuples)
 
     mean_metric = Metric("Mean alignment error", unit="m")
