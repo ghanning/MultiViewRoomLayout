@@ -21,10 +21,18 @@ from .utils import (
 
 
 def multi_room_wall_recall(layout_gt: Layout, layout_pred: Layout, wall_metric: Metric, room_metric: Metric):
+    """! Compute the wall & room recall. Handles multi-room layouts.
+
+    @param layout_gt Ground truth layout.
+    @param layout_pred Predicted layout.
+    @param wall_metric Wall recall metric.
+    @param room_metric Room recall metric.
+    """
     mesh_gt = layout_to_mesh(layout_gt)
     components = mrmeshpy.getAllComponents(mesh_gt)
-    for i in range(len(components)):
+    for i in range(len(components)):  # Loop over rooms in the ground truth layout
         mesh_comp = mesh_gt.cloneRegion(components[i])
+        # Correspondences between rooms in layout_gt & layout_pred not necessarily known, so pass the full prediction
         recall = wall_recall(mesh_comp, layout_pred)
         wall_metric.add(recall)
         room_metric.add(all(recall))
