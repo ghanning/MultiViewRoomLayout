@@ -9,6 +9,10 @@ Each dataset consists of a set of *image tuples* and corresponding *ground truth
 
 The datasets were created during the course of our work on the room layout estimation methods [PixCuboid](https://github.com/ghanning/PixCuboid) and [PolyLayout](https://github.com/ghanning/PolyLayout).
 
+PixCuboid introduced the training, validation and test sets with cuboid rooms from ScanNet++ and the 2D-3D-Semantics test set (also with only cuboids).
+
+The follow-up paper PolyLayout added multi-room validation and test sets created from Aria Synthetic Environments plus a set of new, manually annotated multi-room scenes for ScanNet++. These contain a mix of cuboid and non-cuboid room layouts.
+
 ## Installation
 
 Setup a virtual environment with the required Python packages:
