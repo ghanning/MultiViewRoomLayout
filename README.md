@@ -7,7 +7,7 @@ Each dataset consists of a set of *image tuples* and corresponding *ground truth
 ![Multi-view room layout estimation](assets/teaser.jpg)
 *Given images with known camera poses captured inside a room the goal is to estimate the room layout.*
 
-The datasets were created during the course of our work on the room layout estimation method [PixCuboid](https://github.com/ghanning/PixCuboid).
+The datasets were created during the course of our work on the room layout estimation methods [PixCuboid](https://github.com/ghanning/PixCuboid) and [PolyLayout](https://github.com/ghanning/PolyLayout).
 
 ## Installation
 
@@ -292,6 +292,15 @@ If you use these datasets consider citing our work:
   author={Hanning, Gustav and Åström, Kalle and Larsson, Viktor},
   booktitle={Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) Workshops},
   year={2025},
+}
+```
+
+```
+@inproceedings{hanning2026polylayout,
+  title={{PolyLayout: Multi-room Manhattan Layout Estimation}},
+  author={Hanning, Gustav and Liu, Shaohui and Pautrat, Rémi and Pollefeys, Marc and Åström, Kalle and Larsson, Viktor},
+  booktitle={European Conference on Computer Vision},
+  year={2026},
 }
 ```
 
