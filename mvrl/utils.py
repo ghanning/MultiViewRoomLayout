@@ -36,8 +36,10 @@ def get_layout(input: Union[Dict, str], base_dir: Optional[Path] = None) -> Layo
     """
     if isinstance(input, dict):
         if all(isinstance(v, dict) for v in input.values()):  # Multi-room layout
-            return get_layout(merge_layout(input))
-        if "R" in input and "t" in input and "s" in input:
+            layout = mrmeshpy.Mesh()
+            for v in input.values():
+                layout.addMesh(layout_to_mesh(get_layout(v, base_dir=base_dir)))
+        elif "R" in input and "t" in input and "s" in input:
             layout = Cuboid.from_dict(input)
         elif "faces" in input and "verts" in input:
             faces = np.array(input["faces"]).reshape(-1, 3)
@@ -272,23 +274,6 @@ def unflatten_predictions(layouts_pred: List, image_tuples: List) -> List:
         layouts_pred_new.append(room_layouts)
 
     return layouts_pred_new
-
-
-def merge_layout(layout: Dict) -> Dict:
-    """! Merge multi-room layout into a single (mesh) layout.
-
-    @param layout The multi-room layout.
-    @return The merged layout.
-    """
-    faces, verts = [], []
-    vert_offset = 0
-    for l in layout.values():
-        mesh = layout_to_mesh(get_layout(l))
-        faces.append(mrmeshnumpy.getNumpyFaces(mesh.topology) + vert_offset)
-        verts.append(mrmeshnumpy.getNumpyVerts(mesh))
-        vert_offset += len(verts[-1])
-    layout_merged = {"faces": np.vstack(faces).tolist(), "verts": np.vstack(verts).tolist()}
-    return layout_merged
 
 
 def remove_floor_ceiling(layouts: Dict, up: np.ndarray = np.array([0, 0, 1])) -> Dict:
