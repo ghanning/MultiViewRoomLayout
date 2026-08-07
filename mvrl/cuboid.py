@@ -23,9 +23,9 @@ class Cuboid:
             raise ValueError(f"Invalid size {s}")
         if np.linalg.det(R) < 0.0:
             raise ValueError(f"Invalid orientation {R}")
-        self.R = R
-        self.t = t
-        self.s = s
+        self.R = R.copy()
+        self.t = t.copy()
+        self.s = s.copy()
 
     @classmethod
     def from_dict(cls, dict_: Dict) -> Self:
