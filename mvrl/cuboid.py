@@ -36,6 +36,32 @@ class Cuboid:
         """
         return cls(*(np.array(dict_[key]) for key in ("R", "t", "s")))
 
+    @classmethod
+    def from_Rd(cls, R: np.ndarray, d: np.ndarray) -> Self:
+        """! Create cuboid from rotation matrix and plane offset vector.
+
+        This is an alternative representation where world coordinates are transformed to the local frame by R * x, and
+        the cuboid planes are defined by x = d[0], y = d[1], z = d[2] (lower bounds) and x = d[3], y = d[4], z = d[5]
+        (upper bounds).
+
+        @param R Rotation matrix (3, 3).
+        @param d Plane offset vector (6).
+        @return The cuboid.
+        """
+        t = -(d[:3] + d[3:]) / 2.0
+        s = d[3:] - d[:3]
+        return cls(R, t, s)
+
+    @property
+    def d(self) -> np.ndarray:
+        """! Get plane offset vector.
+
+        @return The plane offset vector (6).
+        """
+        t, s = self.t, self.s
+        d = np.concatenate([-t - s / 2.0, -t + s / 2.0], axis=-1)
+        return d
+
     @property
     def corners(self) -> np.ndarray:
         """! Get the corners of the cuboid in world coordinates.
